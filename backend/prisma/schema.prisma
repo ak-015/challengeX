@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Universal Postgres schema (works on Supabase, Neon, Render, Railway, self-hosted, ...).
+// Only DATABASE_URL is required — no provider-specific keys.
+// Emails are stored lower-cased by the API (zod) so plain unique constraints are enough.
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  displayName    String    @map("display_name")
+  avatarUrl      String?   @map("avatar_url")
+  avatarPublicId String?   @map("avatar_public_id")
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  role           String    @default("user")
+  status         String    @default("active")
+  lastLoginAt    DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sessions Session[]
+  roadmaps Roadmap[]
+  shares   Share[]
+  audits   AdminAudit[] @relation("AuditAdmin")
+
+  @@map("users")
+  @@index([createdAt(sort: Desc)])
+}
+
+model Otp {
+  id         String    @id @default(uuid()) @db.Uuid
+  email      String
+  purpose    String
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("otps")
+  @@index([email, createdAt(sort: Desc)])
+}
+
+model Session {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind              String
+  title             String    @default("")
+  mode              String?
+  ideaText          String?   @map("idea_text")
+  understanding     Json?
+  competitors       Json?
+  qa                Json      @default("[]")
+  assumptions       Json      @default("[]")
+  scores            Json?
+  totalScore        Int?      @map("total_score")
+  verdict           String?
+  verdictPayload    Json?     @map("verdict_payload")
+  skippedCount      Int       @default(0) @map("skipped_count")
+  plannedTotal      Int?      @map("planned_total")
+  extension         Json?
+  status            String    @default("in_progress")
+  saved             Boolean   @default(false)
+  version           Int       @default(0)
+  interrogationDone Boolean   @default(false) @map("interrogation_done")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  roadmaps Roadmap[] @relation("SessionRoadmaps")
+
+  @@map("sessions")
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, kind])
+}
+
+model Roadmap {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trialId   String?  @map("trial_id") @db.Uuid
+  trial     Session? @relation("SessionRoadmaps", fields: [trialId], references: [id], onDelete: SetNull)
+  title     String   @default("")
+  input     Json     @default("{}")
+  graph     Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("roadmaps")
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Share {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  refId     String   @map("ref_id") @db.Uuid
+  snapshot  Json
+  pngUrl    String?  @map("png_url")
+  pdfUrl    String?  @map("pdf_url")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("shares")
+  @@index([userId])
+  @@index([refId])
+}
+
+model AiEvent {
+  id        BigInt   @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  route     String
+  model     String
+  ok        Boolean
+  latencyMs Int      @default(0) @map("latency_ms")
+  errorCode String?  @map("error_code")
+
+  @@map("ai_events")
+  @@index([createdAt(sort: Desc)])
+  @@index([model, createdAt(sort: Desc)])
+}
+
+model AdminAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  adminId   String?  @map("admin_id") @db.Uuid
+  admin     User?    @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  action    String
+  target    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("admin_audit")
+  @@index([createdAt(sort: Desc)])
+}

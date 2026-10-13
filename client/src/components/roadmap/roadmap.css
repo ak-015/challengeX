@@ -1,0 +1,8 @@
+@import '@xyflow/react/dist/style.css';
+
+.cc-flow .react-flow__pane { cursor: grab; }
+.cc-flow .react-flow__attribution { background: rgba(5, 5, 5, 0.8); color: #b9b0a8; }
+.cc-flow .react-flow__attribution a { color: #ff8a93; }
+.cc-flow .react-flow__handle { opacity: 0; pointer-events: none; }
+.cc-flow .react-flow__node:focus-visible { outline: 2px solid #ff5a67; outline-offset: 4px; border-radius: 10px; }
+.cc-edge-rec { filter: drop-shadow(0 0 5px rgba(255, 40, 55, 0.95)); }

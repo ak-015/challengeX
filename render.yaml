@@ -1,0 +1,118 @@
+# Render Blueprint for the whole project (API + static client). Put this file at the REPO ROOT
+# (the folder that contains backend/ and client/). It replaces backend/render.yaml.
+# VERIFY the static-site keys against https://render.com/docs/blueprint-spec before the first deploy.
+services:
+  # ------------------------------------------------------------ API
+  - type: web
+    name: challenge-create-server
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npx prisma db push && npm run db:seed && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN # the static site URL below, e.g. https://challenge-create-client.onrender.com
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: DATABASE_URL # any Postgres (Supabase / Neon / Render / Railway / self-hosted)
+        sync: false
+      - key: GROQ_API_KEY # https://console.groq.com/keys — primary provider
+        sync: false
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GEMINI_API_KEY # https://aistudio.google.com/apikey — fallback provider
+        sync: false
+      - key: GEMINI_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai/
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NIM_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NIM_MODELS
+        sync: false
+      - key: NIM_VERDICT_MODELS
+        sync: false
+      - key: NIM_MAX_CONCURRENCY
+        value: 4
+      - key: SEARCH_PROVIDER
+        value: tavily
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: ChallengeX
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DEV_LOG_OTP
+        value: false
+
+  # ------------------------------------------------------------ Client (static site)
+  - type: web
+    name: challenge-create-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: VITE_API_BASE_URL # e.g. https://challenge-create-server.onrender.com (no trailing slash)
+        sync: false
+    routes:
+      - type: rewrite # SPA fallback
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      # CSP: our own origin, Google Fonts, Cloudinary and our API only.
+      # !! Replace YOUR-API.onrender.com with your real API origin (headers cannot read env vars).
+      # fonts.googleapis.com / fonts.gstatic.com are in connect-src because html-to-image fetches the font CSS when exporting.
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'none';
+          script-src 'self';
+          style-src 'self' https://fonts.googleapis.com;
+          style-src-attr 'unsafe-inline';
+          font-src 'self' data: https://fonts.gstatic.com;
+          img-src 'self' data: blob: https://res.cloudinary.com;
+          connect-src 'self' data: blob: https://YOUR-API.onrender.com https://api.cloudinary.com https://fonts.googleapis.com https://fonts.gstatic.com;
+          media-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
