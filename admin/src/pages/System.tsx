@@ -77,7 +77,7 @@ export default function System() {
         <ErrorState error={error} onRetry={() => void refresh()} />
       ) : (
         <>
-          {error && <p role="alert" className="rounded border border-[#ff6b76] bg-[#2a0408] p-3 text-sm text-ash">Refresh failed: {friendlyMessage(error)} Showing the last data.</p>}
+          {error ? <p role="alert" className="rounded border border-[#ff6b76] bg-[#2a0408] p-3 text-sm text-ash">Refresh failed: {friendlyMessage(error)} Showing the last data.</p> : null}
 
           <section aria-label="Process">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

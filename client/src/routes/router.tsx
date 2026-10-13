@@ -1,5 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { AppShell, type RouteHandle } from '@/components/shell/AppShell';
+import { Splash } from '@/components/ui/Splash';
 import { RouteError } from './RouteError';
 import { RequireAuth, Root } from './Root';
 
@@ -29,6 +30,9 @@ export const router = createBrowserRouter([
   {
     element: <Root />,
     errorElement: <RouteError />,
+    // react-router v7: the initial-load splash is the root route's HydrateFallback
+    // (v6's <RouterProvider fallbackElement> no longer exists).
+    HydrateFallback: Splash,
     children: [
       { path: '/', lazy: () => import('@/pages/Gate') }, // the Gate owns its scene and has no TopBar
       { element: <AppShell />, errorElement: <RouteError />, children: shellChildren },

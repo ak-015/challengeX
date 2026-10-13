@@ -20,7 +20,7 @@ export const TextField = forwardRef<HTMLInputElement, Shared & InputHTMLAttribut
         {label}
       </label>
       <div className="relative">
-        <input ref={ref} id={fid} className={cn('field', trailing && 'pr-12')} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...rest} />
+        <input ref={ref} id={fid} className={cn('field', trailing ? 'pr-12' : undefined)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...rest} />
         {trailing && <div className="absolute right-0 top-0 flex h-full items-center">{trailing}</div>}
       </div>
       {hint && (

@@ -22,7 +22,7 @@ export default defineConfig(async () => {
   }
   return {
     plugins,
-    resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+    resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
     build: {
       target: 'es2020',
       sourcemap: false,

@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@config "../tailwind.config.js";
 @import './styles/scenes.css';
+@config "../tailwind.config.js";
 
 /* ------------------------------------------------------------------ design tokens */
 :root {
