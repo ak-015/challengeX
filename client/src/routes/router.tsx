@@ -8,7 +8,7 @@ const h = (handle: RouteHandle) => ({ handle });
 
 // Every page is a lazy route (its own chunk). Pages export `Component`.
 const protectedRoutes: RouteObject[] = [
-  { path: 'realm', lazy: () => import('@/pages/Realm'), ...h({ scene: 'valley', circle: 'menu' }) },
+  { path: 'realm', lazy: () => import('@/pages/Realm'), ...h({ scene: 'valley', circle: 'floor', ground: true, rail: false }) },
   { path: 'altar', lazy: () => import('@/pages/Altar'), ...h({ scene: 'altar', circle: 'dais' }) },
   { path: 'trial/:id', lazy: () => import('@/pages/Trial'), ...h({ scene: 'altar', dimmed: true, circle: 'dais-dim' }) },
   { path: 'verdict/:id', lazy: () => import('@/pages/Verdict'), ...h({ scene: 'dim' }) },
@@ -34,7 +34,9 @@ export const router = createBrowserRouter([
     // (v6's <RouterProvider fallbackElement> no longer exists).
     HydrateFallback: Splash,
     children: [
-      { path: '/', lazy: () => import('@/pages/Gate') }, // the Gate owns its scene and has no TopBar
+      { path: '/', lazy: () => import('@/pages/Landing') }, // public marketing page (no TopBar)
+      { path: '/gate', lazy: () => import('@/pages/Gate') }, // the Gate owns its scene and has no TopBar
+      { path: '/:doc(privacy|terms)', lazy: () => import('@/pages/Legal') }, // placeholder legal pages
       { element: <AppShell />, errorElement: <RouteError />, children: shellChildren },
     ],
   },

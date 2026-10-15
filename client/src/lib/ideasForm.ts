@@ -8,6 +8,7 @@ export interface IdeasForm {
   skills: string[];
   experience: string;
   field: string;
+  focus: string[];
   problemArea: string;
   audience: string;
   region: string;
@@ -18,26 +19,29 @@ export interface IdeasForm {
   goal: string;
   avoid: string;
   extra: string;
+  count: number;
 }
 
 export const emptyIdeasForm: IdeasForm = {
-  hobbies: [], interests: [], skills: [], experience: '', field: '', problemArea: '', audience: '', region: '',
-  teamSize: '', hoursPerWeek: '', budget: '', platform: '', goal: '', avoid: '', extra: '',
+  hobbies: [], interests: [], skills: [], experience: '', field: '', focus: [], problemArea: '', audience: '', region: '',
+  teamSize: '', hoursPerWeek: '', budget: '', platform: '', goal: '', avoid: '', extra: '', count: 3,
 };
 
 /** The only hard requirement: at least one of hobbies / interests / skills / field. */
 export const hasRequired = (f: IdeasForm): boolean => f.hobbies.length > 0 || f.interests.length > 0 || f.skills.length > 0 || f.field.trim().length > 0;
 
-/** Builds the API payload. Experience level has no server field, so it travels inside `extra`. Empty strings are dropped. */
+/** Builds the API payload. Empty strings are dropped. (The server always returns exactly 3 ideas;
+ *  the count selector only controls how many are displayed — see Ideas.tsx.) */
 export function buildIdeasPayload(f: IdeasForm): IdeasInput {
   const extra = [f.experience ? `Experience level: ${f.experience}.` : '', f.extra.trim()].filter(Boolean).join(' ');
   const opt = (v: string) => (v.trim() ? v.trim() : undefined);
+  const problemArea = [...f.focus, f.problemArea.trim()].filter(Boolean).join(', ').slice(0, 200);
   return {
     hobbies: f.hobbies,
     interests: f.interests,
     skills: f.skills,
     field: opt(f.field),
-    problemArea: opt(f.problemArea),
+    problemArea: opt(problemArea),
     audience: opt(f.audience),
     region: opt(f.region),
     teamSize: opt(f.teamSize),

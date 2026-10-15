@@ -9,7 +9,7 @@ function Rune({ i, status }: { i: number; status: RuneStatus }) {
   const lit = status === 'answered';
   return (
     <svg viewBox="-12 -12 24 24" width={30} height={30} aria-hidden="true" className={cn(status === 'current' && 'pulse-opacity')}>
-      <circle r="11" fill={lit ? 'rgba(196,20,35,0.55)' : 'rgba(0,0,0,0.5)'} stroke={status === 'upcoming' ? '#6a5a58' : '#ff5a67'} strokeWidth={status === 'current' ? 1.8 : 1.2} strokeDasharray={status === 'skipped' ? '3 2' : undefined} />
+      <circle r="11" fill={lit ? 'rgba(142,24,36,0.55)' : 'rgba(0,0,0,0.5)'} stroke={status === 'upcoming' ? '#6a5a58' : '#ff5a67'} strokeWidth={status === 'current' ? 1.8 : 1.2} strokeDasharray={status === 'skipped' ? '3 2' : undefined} />
       <path d={glyphPath(i)} fill="none" stroke={lit ? '#fff' : status === 'upcoming' ? '#6a5a58' : '#ff8a93'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" transform="scale(.8)" />
       {status === 'skipped' && <path d="M-9 9L9 -9" stroke="#ff8a93" strokeWidth="2" strokeLinecap="round" />}
     </svg>

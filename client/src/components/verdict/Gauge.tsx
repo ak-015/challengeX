@@ -11,7 +11,7 @@ export function Gauge({ score, verdict, animate = true, size = 220, label = true
   const run = animate && !reduced;
   const [shown, setShown] = useState(run ? 0 : score);
   const n = useCountUp(score, 1600, run);
-  const ring = verdict ? VERDICT_STYLE[verdict].ring : '#e11d2e';
+  const ring = verdict ? VERDICT_STYLE[verdict].ring : '#e50920';
 
   useEffect(() => {
     if (!run) {
@@ -25,7 +25,7 @@ export function Gauge({ score, verdict, animate = true, size = 220, label = true
   return (
     <div className="relative inline-block" style={{ width: size, height: size }}>
       <svg viewBox="0 0 220 220" width={size} height={size} role="img" aria-label={`Market readiness score ${score} out of 100${verdict ? `, verdict ${verdict}` : ''}`}>
-        <circle cx="110" cy="110" r={GAUGE_R + 14} fill="none" stroke="rgba(225,29,46,0.25)" strokeWidth="1" />
+        <circle cx="110" cy="110" r={GAUGE_R + 14} fill="none" stroke="rgba(229,9,32,0.25)" strokeWidth="1" />
         <circle cx="110" cy="110" r={GAUGE_R} fill="none" stroke="#2a1214" strokeWidth="16" />
         <circle
           cx="110"

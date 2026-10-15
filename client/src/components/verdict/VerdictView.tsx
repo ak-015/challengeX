@@ -24,7 +24,7 @@ function Reveal({ show, children }: { show: boolean; children: ReactNode }) {
 function EffortBadge({ effort }: { effort: 'low' | 'medium' | 'high' }) {
   const n = effort === 'low' ? 1 : effort === 'medium' ? 2 : 3;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(185,176,168,0.6)] px-2.5 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-ash">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(112,52,58,0.9)] px-2.5 py-0.5 font-label text-xs font-semibold uppercase tracking-wider text-ash">
       <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
         {[0, 1, 2].map((i) => (
           <rect key={i} x={i * 6} y={10 - (i + 1) * 3.3} width="4" height={(i + 1) * 3.3} fill={i < n ? '#ff8a93' : '#4a3a3c'} />
@@ -93,7 +93,7 @@ export function VerdictView({ data, actions, animate = true }: { data: VerdictDa
         <GlassPanel className="p-5 sm:p-8">
           <H2>The seven risk areas</H2>
           <Radar scores={scores} animate={animate} />
-          <ul className="mt-4 divide-y divide-[rgba(185,176,168,0.2)]">
+          <ul className="mt-4 divide-y divide-[rgba(73,32,36,0.6)]">
             {CATEGORIES.map((c) => {
               const cs = data.categoryScores[c];
               const isOpen = open === c;
@@ -130,7 +130,7 @@ export function VerdictView({ data, actions, animate = true }: { data: VerdictDa
                   <CategoryTag category={s.category} />
                   <h3 className="font-label text-lg font-bold text-ash">{s.title}</h3>
                   <p className="font-prose text-ash-dim">{s.why}</p>
-                  <p className="rounded border border-[rgba(185,176,168,0.3)] bg-black/40 p-2.5 font-prose text-sm text-ash">
+                  <p className="rounded border border-[rgba(73,32,36,0.8)] bg-black/40 p-2.5 font-prose text-sm text-ash">
                     {s.answerExcerpt === 'skipped' ? <em>You skipped this</em> : <>You said: “{s.answerExcerpt}”</>}
                   </p>
                 </GlassPanel>
@@ -191,7 +191,7 @@ export function VerdictView({ data, actions, animate = true }: { data: VerdictDa
                   ['Sample size', data.validationExperiment.sampleSize],
                   ['Duration', `${data.validationExperiment.durationDays} days`],
                 ].map(([k, v]) => (
-                  <div key={k} className="rounded border border-[rgba(185,176,168,0.3)] bg-black/40 p-3">
+                  <div key={k} className="rounded border border-[rgba(73,32,36,0.8)] bg-black/40 p-3">
                     <dt className="font-label text-xs uppercase tracking-wider text-ash-dim">{k}</dt>
                     <dd className="mt-1 font-prose text-ash">{v}</dd>
                   </div>
@@ -224,7 +224,7 @@ export function VerdictView({ data, actions, animate = true }: { data: VerdictDa
                 <GlassPanel className="h-full space-y-1 p-4" corners={false}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-label font-bold text-ash">{c.name}</p>
-                    <span className="rounded-full border border-[rgba(185,176,168,0.6)] px-2 py-0.5 font-label text-[11px] uppercase tracking-wider text-ash">{c.source === 'search' ? 'From search' : 'AI estimate, verify'}</span>
+                    <span className="rounded-full border border-[rgba(112,52,58,0.9)] px-2 py-0.5 font-label text-[11px] uppercase tracking-wider text-ash">{c.source === 'search' ? 'From search' : 'AI estimate, verify'}</span>
                   </div>
                   <p className="font-prose text-sm text-ash">{c.whatTheyDo}</p>
                   <p className="font-prose text-sm text-ash-dim">{c.whyItMatters}</p>

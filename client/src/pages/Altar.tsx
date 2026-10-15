@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
-import { TextAreaField } from '@/components/ui/Fields';
+import { SelectField, TextAreaField, TextField } from '@/components/ui/Fields';
 import { GlassPanel } from '@/components/ui/GlassPanel';
 import { Heading } from '@/components/ui/Heading';
 import { Icon } from '@/components/ui/Icon';
@@ -13,6 +13,9 @@ import { trials } from '@/lib/endpoints';
 import { cn } from '@/lib/cn';
 import { friendlyMessage, isAbort, isRetryable } from '@/lib/errors';
 import { useFx, type AltarPhase } from '@/store/sceneFxStore';
+
+/** Optional idea categories (purely descriptive — folded into the idea text sent to the API). */
+const IDEA_CATEGORIES = ['Business', 'Technology', 'Education', 'Health', 'Sustainability', 'Agriculture', 'Finance', 'E-commerce', 'Social Impact', 'Other'] as const;
 
 interface AltarState {
   intro?: boolean;
@@ -28,6 +31,13 @@ const SEQUENCE: Array<[number, AltarPhase]> = [
   [1600, 'done'],
 ];
 
+/** "Challenge This" passes one text blob (title: oneLiner Problem: … Target users: …). Split it back apart. */
+function splitIdea(text: string): { title: string; description: string } {
+  const idx = text.indexOf(': ');
+  if (idx > 0 && idx < 80) return { title: text.slice(0, idx), description: text.slice(idx + 2) };
+  return { title: '', description: text };
+}
+
 export function Component() {
   useDocumentTitle('The Altar');
   const navigate = useNavigate();
@@ -35,8 +45,12 @@ export function Component() {
   const state = (location.state as AltarState | null) ?? {};
   const reduced = useReducedMotion();
 
+  const prefill = state.idea ? splitIdea(state.idea) : { title: '', description: '' };
   const [intro, setIntro] = useState(!!state.intro && !reduced);
-  const [idea, setIdea] = useState(state.idea ?? '');
+  const [title, setTitle] = useState(prefill.title);
+  const [idea, setIdea] = useState(prefill.description);
+  const [category, setCategory] = useState('');
+  const [details, setDetails] = useState('');
   const [mode, setMode] = useState<ModeKey>(state.mode && MODE_KEYS.includes(state.mode) ? state.mode : DEFAULT_MODE);
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -83,9 +97,11 @@ export function Component() {
     return () => window.removeEventListener('keydown', onKey);
   }, [intro, finishIntro]);
 
-  const trimmed = idea.trim();
+  // The API takes ONE idea string (20..2000 chars). Compose the structured fields into it.
+  const composed = [title.trim(), idea.trim(), category && `Category: ${category}.`, details.trim() && `Additional details: ${details.trim()}.`].filter(Boolean).join('\n\n');
+  const trimmed = composed;
   const tooShort = trimmed.length < MIN_IDEA_CHARS;
-  const tooLong = idea.length > MAX_IDEA_CHARS;
+  const tooLong = composed.length > MAX_IDEA_CHARS;
   const validation = tooLong
     ? `Keep it under ${MAX_IDEA_CHARS} characters.`
     : tooShort && touched
@@ -125,9 +141,16 @@ export function Component() {
           <div aria-hidden="true" className="mx-auto h-4 w-[96%] rounded-full border border-[#6b4a3a] bg-gradient-to-b from-[#6b4f3f] via-[#2b1d17] to-[#120a08]" />
           <GlassPanel className="-my-1 w-full space-y-5 rounded-none p-5 sm:p-8" aria-labelledby="altar-h">
             <div className="text-center">
+              <p className="eyebrow mb-2">The Trial</p>
               <Heading level={2} id="altar-h">
-                Speak your idea into the unknown…
+                Challenge My <span className="text-crimson-text">Idea</span>
               </Heading>
+              <div className="rune-divider mt-3" aria-hidden="true">
+                <span />
+              </div>
+              <p className="mx-auto mt-3 max-w-lg font-prose text-lg text-ash-dim">
+                Put your idea to the test. Face questions, explore risks, and strengthen it before you move forward.
+              </p>
             </div>
 
             <form
@@ -138,24 +161,52 @@ export function Component() {
               noValidate
               className="space-y-5"
             >
-              <TextAreaField
-                label="Your idea"
-                value={idea}
-                onChange={(e) => setIdea(e.target.value)}
-                onBlur={() => setTouched(true)}
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    void submit();
-                  }
-                }}
-                rows={6}
-                placeholder="An app that helps farmers predict crop disease."
-                counter={{ value: idea.length, max: MAX_IDEA_CHARS }}
-                error={validation}
-                hint="Be concrete: who is it for, and what problem does it solve?"
-                disabled={busy}
-              />
+              <fieldset className="space-y-4" disabled={busy}>
+                <legend className="sr-only">Your idea</legend>
+                <TextField
+                  label="Idea Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  maxLength={120}
+                  placeholder="Give your idea a short and clear title…"
+                  autoComplete="off"
+                />
+                <TextAreaField
+                  label="Idea Description"
+                  value={idea}
+                  onChange={(e) => setIdea(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                      e.preventDefault();
+                      void submit();
+                    }
+                  }}
+                  rows={6}
+                  placeholder="Explain your idea in detail. What problem does it solve? Who is it for? What makes it unique?"
+                  counter={{ value: idea.length, max: 1000 }}
+                  error={validation}
+                  hint="Be concrete: who is it for, and what problem does it solve?"
+                />
+                <SelectField label="Category (optional)" value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">Select a category</option>
+                  {IDEA_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </SelectField>
+                <TextAreaField
+                  label="Additional Details (optional)"
+                  value={details}
+                  onChange={(e) => setDetails(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Add any extra context, goals, or specific questions you want feedback on…"
+                  counter={{ value: details.length, max: 500 }}
+                />
+              </fieldset>
 
               <fieldset className="space-y-2" disabled={busy}>
                 <legend className="mb-1 font-label text-sm font-semibold tracking-wide text-ash">Intensity</legend>
@@ -169,7 +220,7 @@ export function Component() {
                       onClick={() => setMode(k)}
                       className={cn(
                         'flex min-h-[64px] items-start gap-3 rounded-md border p-3 text-left',
-                        mode === k ? 'border-crimson-text bg-[rgba(196,20,35,0.28)]' : 'border-[rgba(185,176,168,0.4)] bg-[rgba(0,0,0,0.35)] hover:border-crimson',
+                        mode === k ? 'border-crimson-text bg-[rgba(142,24,36,0.28)]' : 'border-[rgba(73,32,36,0.9)] bg-[rgba(0,0,0,0.35)] hover:border-crimson',
                         k === 'failure' && 'sm:col-span-2',
                       )}
                     >
@@ -201,7 +252,7 @@ export function Component() {
 
               <div className="text-center">
                 <Button type="submit" loading={busy} className="w-full sm:w-auto sm:px-12" disabled={tooLong}>
-                  Begin the Trial
+                  Challenge My Idea <Icon name="chevronRight" size={16} />
                 </Button>
               </div>
             </form>

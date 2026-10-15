@@ -28,7 +28,7 @@ export function ChipInput({ label, values, onChange, suggestions = [], max = 12,
       <label htmlFor={id} className="mb-1 block font-label text-sm font-semibold tracking-wide text-ash">
         {label}
       </label>
-      <div className="rounded-md border border-[rgba(185,176,168,0.5)] bg-black/55 p-2 focus-within:border-crimson-text">
+      <div className="rounded-md border border-[rgba(73,32,36,0.9)] bg-black/55 p-2 focus-within:border-crimson-text">
         <ul className="mb-1 flex flex-wrap gap-1.5" aria-label={`${label}: selected`}>
           {values.map((v) => (
             <li key={v} className="inline-flex items-center gap-1 rounded-full border border-crimson bg-[#3a0509] py-0.5 pl-3 pr-1 font-label text-sm text-ash">
@@ -45,7 +45,7 @@ export function ChipInput({ label, values, onChange, suggestions = [], max = 12,
       {unused.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={`${label}: suggestions`}>
           {unused.map((s) => (
-            <button key={s} type="button" className="min-h-[36px] rounded-full border border-[rgba(185,176,168,0.5)] px-3 font-label text-xs text-ash hover:border-crimson-text" onClick={() => add(s)}>
+            <button key={s} type="button" className="min-h-[36px] rounded-full border border-[rgba(73,32,36,0.9)] px-3 font-label text-xs text-ash hover:border-crimson-text" onClick={() => add(s)}>
               + {s}
             </button>
           ))}

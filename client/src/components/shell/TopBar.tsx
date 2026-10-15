@@ -14,7 +14,7 @@ function canGoBack(): boolean {
   return typeof idx === 'number' && idx > 0;
 }
 
-export function TopBar() {
+export function TopBar({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user, token, logout } = useAuth();
@@ -24,11 +24,16 @@ export function TopBar() {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(225,29,46,0.45)] bg-[rgba(5,5,5,0.88)]"
+      className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(229,9,32,0.3)] bg-[rgba(7,5,6,0.9)] backdrop-blur-md"
       style={{ paddingTop: 'var(--safe-top)' }}
     >
-      <div className="safe-pad mx-auto grid h-14 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center gap-1 sm:gap-3">
+      <div className="safe-pad mx-auto grid h-14 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center gap-1 sm:gap-3 lg:pl-2">
         <div className="flex items-center gap-1">
+          {onOpenMenu && (
+            <button type="button" className={iconBtn} aria-label="Open navigation menu" onClick={onOpenMenu}>
+              <Icon name="menu" />
+            </button>
+          )}
           {hideBack ? (
             <span className="h-11 w-0" />
           ) : (
@@ -36,12 +41,15 @@ export function TopBar() {
               <Icon name="back" />
             </button>
           )}
-          <Link to={token ? '/realm' : '/'} className="inline-flex h-11 w-11 items-center justify-center rounded-md" aria-label="ChallengeX, home">
-            <RuneLogo size={34} />
+          <Link to={token ? '/realm' : '/'} className="inline-flex h-11 items-center gap-2 rounded-md px-1" aria-label="ChallengeX, home">
+            <RuneLogo size={30} />
+            <span className="hidden font-display text-sm font-bold tracking-[0.16em] text-ash sm:inline">
+              Challenge<span className="text-crimson-text">X</span>
+            </span>
           </Link>
         </div>
 
-        <p className="truncate text-center font-display text-sm font-bold tracking-[0.18em] text-ash sm:text-base">ChallengeX</p>
+        <p className="truncate text-center font-label text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-ash-faint">Enter the Realm of Ideas</p>
 
         <div className="flex items-center gap-1">
           <button type="button" className={iconBtn} aria-pressed={muted} aria-label={muted ? 'Unmute sound' : 'Mute sound'} onClick={toggleMuted}>
@@ -50,7 +58,7 @@ export function TopBar() {
           {user ? (
             <AvatarMenu name={user.displayName} avatarUrl={user.avatarUrl} onLogout={() => (logout(), navigate('/'))} />
           ) : (
-            <Link to="/" className="btn btn-sm">
+            <Link to="/gate" className="btn btn-sm">
               Enter
             </Link>
           )}
@@ -108,11 +116,11 @@ function AvatarMenu({ name, avatarUrl, onLogout }: { name: string; avatarUrl: st
         <div role="menu" aria-label="Account" className="glass absolute right-0 top-12 z-50 w-52 overflow-hidden p-1">
           <p className="truncate px-3 py-2 font-label text-xs text-ash-dim">{name}</p>
           {items.map((it) => (
-            <Link key={it.to} to={it.to} role="menuitem" onClick={() => setOpen(false)} className="flex min-h-[44px] items-center gap-3 rounded px-3 font-label text-sm text-ash hover:bg-[rgba(225,29,46,0.18)]">
+            <Link key={it.to} to={it.to} role="menuitem" onClick={() => setOpen(false)} className="flex min-h-[44px] items-center gap-3 rounded px-3 font-label text-sm text-ash hover:bg-[rgba(229,9,32,0.18)]">
               <Icon name={it.icon} size={18} /> {it.label}
             </Link>
           ))}
-          <button type="button" role="menuitem" onClick={onLogout} className="flex min-h-[44px] w-full items-center gap-3 rounded px-3 text-left font-label text-sm text-ash hover:bg-[rgba(225,29,46,0.18)]">
+          <button type="button" role="menuitem" onClick={onLogout} className="flex min-h-[44px] w-full items-center gap-3 rounded px-3 text-left font-label text-sm text-ash hover:bg-[rgba(229,9,32,0.18)]">
             <Icon name="logout" size={18} /> Logout
           </button>
         </div>

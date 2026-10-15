@@ -11,7 +11,7 @@ interface Props extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   children?: ReactNode;
 }
 
-/** Dark glass panel: >= rgba(8,4,5,0.78) background, blur <= 8px, glowing red border, ornate corners. Static panels only. */
+/** Dark glass panel: >= rgba(7,5,6,0.78) background, blur <= 8px, glowing red border, ornate corners. Static panels only. */
 export const GlassPanel = forwardRef<HTMLElement, Props>(function GlassPanel(
   { as: Tag = 'div', interactive, corners = true, className, children, ...rest },
   ref,

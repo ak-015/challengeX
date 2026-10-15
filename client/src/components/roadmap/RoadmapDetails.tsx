@@ -52,7 +52,7 @@ export function RoadmapDetails({ title, graph }: { title: string; graph: Graph }
                   </div>
                 )}
                 {n.betterPath && byId.get(n.betterPath) && (
-                  <p className="rounded border border-[rgba(185,176,168,0.4)] p-2.5 font-prose text-sm text-ash">
+                  <p className="rounded border border-[rgba(73,32,36,0.9)] p-2.5 font-prose text-sm text-ash">
                     <strong className="font-label text-xs uppercase tracking-wider text-ash-dim">Suggested better path: </strong>
                     {byId.get(n.betterPath)?.title}
                   </p>

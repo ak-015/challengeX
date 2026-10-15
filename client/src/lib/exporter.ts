@@ -16,7 +16,7 @@ export function dataUrlToBlob(dataUrl: string): Blob {
 export async function renderCoverPng(node: HTMLElement, width = 1080, height = 1350): Promise<{ dataUrl: string; width: number; height: number }> {
   const { toPng } = await import('html-to-image');
   if (document.fonts?.ready) await document.fonts.ready;
-  const dataUrl = await toPng(node, { width, height, pixelRatio: 1, cacheBust: true, backgroundColor: '#050505' });
+  const dataUrl = await toPng(node, { width, height, pixelRatio: 1, cacheBust: true, backgroundColor: '#070506' });
   return { dataUrl, width, height };
 }
 

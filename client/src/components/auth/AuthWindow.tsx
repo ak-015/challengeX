@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { OtpInput } from './OtpInput';
+import { RuneLogo } from '@/components/art/RuneLogo';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/Fields';
 import { GlassPanel } from '@/components/ui/GlassPanel';
@@ -27,6 +29,8 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [code, setCode] = useState('');
@@ -103,7 +107,16 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
   };
   const onSignup = (e: FormEvent) => {
     e.preventDefault();
-    if (!validate({ name: name.trim() ? null : 'Tell us what to call you.', email: emailErr, password: password.length >= 8 ? null : 'Use at least 8 characters.' })) return;
+    if (
+      !validate({
+        name: name.trim() ? null : 'Tell us what to call you.',
+        email: emailErr,
+        password: password.length >= 8 ? null : 'Use at least 8 characters.',
+        confirm: confirmPw === password ? null : 'Passwords do not match.',
+        terms: agreed ? null : 'You must accept the terms to continue.',
+      })
+    )
+      return;
     void run(async () => {
       await auth.signup({ email: email.trim(), password, displayName: name.trim() });
       startOtp('signup', `We sent a 6-digit code to ${email.trim()}.`);
@@ -174,11 +187,25 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
   return (
     <GlassPanel className="w-full max-w-md p-5 sm:p-7" aria-label="Sign in to the realm">
       <div className="mb-4 text-center">
-        <Heading level={2}>{view === 'otp' ? 'Verify your email' : view === 'forgot' || view === 'reset' ? 'Reclaim your access' : 'Enter the Realm'}</Heading>
+        <div className="flex items-center justify-center gap-2.5">
+          <RuneLogo size={28} />
+          <span className="font-display text-xl font-bold tracking-[0.14em] text-ash">
+            Challenge<span className="text-crimson-text">X</span>
+          </span>
+        </div>
+        <p className="mt-1 font-label text-[0.6rem] uppercase tracking-[0.3em] text-ash-faint">The Realm of Ideas</p>
+        <Heading level={2} className="mt-3">
+          {view === 'otp' ? 'Verify Your Email' : view === 'forgot' || view === 'reset' ? 'Reclaim Your Access' : view === 'signup' ? 'Create Your Account' : 'Enter the Realm'}
+        </Heading>
+        <div className="rune-divider mt-3" aria-hidden="true">
+          <span />
+        </div>
+        {view === 'login' && <p className="mt-3 font-prose text-base italic text-ash-dim">Enter your credentials to cross the threshold.</p>}
+        {view === 'signup' && <p className="mt-3 font-prose text-base italic text-ash-dim">Start your journey. Turn your ideas into real opportunities.</p>}
       </div>
 
       {tabs && (
-        <div role="tablist" aria-label="Sign in or sign up" className="mb-5 grid grid-cols-2 gap-1 rounded-md border border-[rgba(225,29,46,0.5)] p-1">
+        <div role="tablist" aria-label="Sign in or sign up" className="mb-5 grid grid-cols-2 gap-1 rounded-md border border-[rgba(229,9,32,0.5)] p-1">
           {(['login', 'signup'] as const).map((t) => (
             <button
               key={t}
@@ -186,7 +213,7 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
               type="button"
               aria-selected={view === t}
               onClick={() => setView(t)}
-              className={cn('min-h-[44px] rounded font-label text-sm font-bold uppercase tracking-widest', view === t ? 'bg-crimson-btn text-white' : 'text-ash hover:bg-[rgba(225,29,46,0.15)]')}
+              className={cn('min-h-[44px] rounded font-label text-sm font-bold uppercase tracking-widest', view === t ? 'bg-crimson-btn text-white' : 'text-ash hover:bg-[rgba(229,9,32,0.15)]')}
             >
               {t === 'login' ? 'Login' : 'Sign up'}
             </button>
@@ -201,32 +228,63 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
             <Icon name="warning" size={18} className="mt-0.5 shrink-0 text-crimson-text" /> <span>{error}</span>
           </p>
         )}
-        {info && !error && <p role="status" className="mb-3 rounded border border-[rgba(185,176,168,0.5)] bg-[rgba(255,255,255,0.04)] p-3 text-sm text-ash">{info}</p>}
+        {info && !error && <p role="status" className="mb-3 rounded border border-[rgba(73,32,36,0.9)] bg-[rgba(255,255,255,0.04)] p-3 text-sm text-ash">{info}</p>}
       </div>
 
       {view === 'login' && (
         <form onSubmit={onLogin} noValidate className="space-y-4">
           <TextField label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErr.email} />
           <TextField label="Password" type={showPw ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} error={fieldErr.password} trailing={pwTrailing} />
+          <div className="text-right">
+            <button type="button" className="min-h-[44px] font-label text-sm text-crimson-text underline" onClick={() => setView('forgot')}>
+              Forgot your password?
+            </button>
+          </div>
           <Button type="submit" className="w-full" loading={busy}>
-            Enter
+            Enter the Realm <Icon name="chevronRight" size={16} />
           </Button>
-          <button type="button" className="mx-auto block min-h-[44px] font-label text-sm text-crimson-text underline" onClick={() => setView('forgot')}>
-            Forgot password?
-          </button>
         </form>
       )}
 
       {view === 'signup' && (
         <form onSubmit={onSignup} noValidate className="space-y-4">
-          <TextField label="Name" autoComplete="name" maxLength={50} value={name} onChange={(e) => setName(e.target.value)} error={fieldErr.name} />
-          <TextField label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErr.email} />
+          <TextField label="Full Name" autoComplete="name" maxLength={50} value={name} onChange={(e) => setName(e.target.value)} error={fieldErr.name} />
+          <TextField label="Email Address" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErr.email} />
           <div>
             <TextField label="Password" type={showPw ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} error={fieldErr.password} trailing={pwTrailing} />
             {strengthBar}
           </div>
+          <TextField
+            label="Confirm Password"
+            type={showPw ? 'text' : 'password'}
+            autoComplete="new-password"
+            value={confirmPw}
+            onChange={(e) => setConfirmPw(e.target.value)}
+            error={fieldErr.confirm}
+          />
+          <div>
+            <label className="flex cursor-pointer items-start gap-3 py-1">
+              <input type="checkbox" className="mt-1 h-5 w-5 accent-[#c4081d]" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <span className="font-prose text-base text-ash-dim">
+                I agree to the{' '}
+                <Link to="/terms" className="text-ash underline" target="_blank" rel="noopener noreferrer">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="text-ash underline" target="_blank" rel="noopener noreferrer">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+            {fieldErr.terms && (
+              <p role="alert" className="mt-1 text-sm text-crimson-text">
+                {fieldErr.terms}
+              </p>
+            )}
+          </div>
           <Button type="submit" className="w-full" loading={busy}>
-            Create account
+            Create Account <Icon name="chevronRight" size={16} />
           </Button>
         </form>
       )}
@@ -286,6 +344,38 @@ export function AuthWindow({ onAuthed }: { onAuthed: () => void }) {
           </div>
         </form>
       )}
+
+      {/* footer: switch link + legal/support (PDF pp. 2 & 5) */}
+      <div className="border-t border-[var(--edge)] pt-4 text-center">
+        {view === 'login' && (
+          <p className="font-prose text-base text-ash-dim">
+            Don&rsquo;t have an account?{' '}
+            <button type="button" className="font-label text-sm font-bold uppercase tracking-wider text-crimson-text underline" onClick={() => setView('signup')}>
+              Create one now
+            </button>
+          </p>
+        )}
+        {view === 'signup' && (
+          <p className="font-prose text-base text-ash-dim">
+            Already have an account?{' '}
+            <button type="button" className="font-label text-sm font-bold uppercase tracking-wider text-crimson-text underline" onClick={() => setView('login')}>
+              Sign in
+            </button>
+          </p>
+        )}
+        <p className="mt-3 font-prose text-sm text-ash-faint">
+          &copy; {new Date().getFullYear()} ChallengeX. All rights reserved.
+          <br className="sm:hidden" />
+          <span className="mx-1 sm:mx-2">|</span>
+          <Link to="/privacy" className="underline hover:text-crimson-text">
+            Privacy
+          </Link>
+          <span className="mx-1 sm:mx-2">|</span>
+          <Link to="/terms" className="underline hover:text-crimson-text">
+            Terms
+          </Link>
+        </p>
+      </div>
     </GlassPanel>
   );
 }

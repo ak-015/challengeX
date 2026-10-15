@@ -34,7 +34,7 @@ function CcEdge(p: EdgeProps) {
       {d.label && (
         <EdgeLabelRenderer>
           <div
-            className="nodrag nopan pointer-events-none absolute rounded border bg-[rgba(5,5,5,0.92)] px-1.5 py-0.5 font-label text-[10px] font-bold"
+            className="nodrag nopan pointer-events-none absolute rounded border bg-[rgba(7,5,6,0.92)] px-1.5 py-0.5 font-label text-[10px] font-bold"
             style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, color: d.kind === 'recommended' ? '#ff8a93' : '#e8e2dc', borderColor: d.kind === 'recommended' ? '#ff3b4d' : '#8a7a78', opacity: d.dim ? 0.3 : 1 }}
           >
             {d.label}
@@ -179,7 +179,7 @@ function Inner({ graph }: { graph: Graph; readOnly?: boolean }) {
     void setViewport({ ...viewport, x: viewport.x + movement[0], y: viewport.y + movement[1] }, { duration: 0 });
   }, [getViewport, setViewport]);
 
-  const tool = 'inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-md border border-[rgba(225,29,46,0.6)] bg-[rgba(8,4,5,0.9)] px-3 font-label text-xs font-bold text-ash hover:border-crimson-text';
+  const tool = 'inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-md border border-[rgba(229,9,32,0.6)] bg-[rgba(7,5,6,0.9)] px-3 font-label text-xs font-bold text-ash hover:border-crimson-text';
 
   return (
     <div className="space-y-3">
@@ -275,7 +275,7 @@ function Inner({ graph }: { graph: Graph; readOnly?: boolean }) {
               </div>
             )}
             {selected.betterPath && byId.get(selected.betterPath) && (
-              <div className="rounded border border-[rgba(185,176,168,0.4)] p-3">
+              <div className="rounded border border-[rgba(73,32,36,0.9)] p-3">
                 <dt className="font-label text-xs font-bold uppercase tracking-wider text-ash-dim">Suggested better path</dt>
                 <dd className="mt-1 font-prose text-ash">{byId.get(selected.betterPath)?.title}</dd>
                 <button type="button" className="mt-2 min-h-[44px] rounded border border-[#f2c14a] px-3 font-label text-xs font-bold text-[#ffd27a]" onClick={() => (setBetter(selected.betterPath ?? null), setSelected(null))}>Highlight on the map</button>

@@ -49,7 +49,7 @@ export function RivalsList({ competitors }: { competitors: Competitor[] }) {
         <li key={c.name} className="rounded-md border border-[rgba(185,176,168,0.35)] bg-[rgba(0,0,0,0.4)] p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-label text-base font-bold text-ash">{c.name}</p>
-            <span className="rounded-full border border-[rgba(185,176,168,0.6)] px-2 py-0.5 font-label text-[11px] uppercase tracking-wider text-ash">
+            <span className="rounded-full border border-[rgba(112,52,58,0.9)] px-2 py-0.5 font-label text-[11px] uppercase tracking-wider text-ash">
               {c.source === 'search' ? 'From search' : 'AI estimate, verify'}
             </span>
           </div>
@@ -73,9 +73,9 @@ export function AssumptionMap({ assumptions, competitors }: { assumptions: Assum
   const [tab, setTab] = useState<'map' | 'rivals'>('map');
   return (
     <div>
-      <div role="tablist" aria-label="Assumption map" className="mb-4 grid grid-cols-2 gap-1 rounded-md border border-[rgba(225,29,46,0.5)] p-1">
+      <div role="tablist" aria-label="Assumption map" className="mb-4 grid grid-cols-2 gap-1 rounded-md border border-[rgba(229,9,32,0.5)] p-1">
         {(['map', 'rivals'] as const).map((t) => (
-          <button key={t} role="tab" type="button" aria-selected={tab === t} onClick={() => setTab(t)} className={cn('min-h-[44px] rounded font-label text-xs font-bold uppercase tracking-widest', tab === t ? 'bg-crimson-btn text-white' : 'text-ash hover:bg-[rgba(225,29,46,0.15)]')}>
+          <button key={t} role="tab" type="button" aria-selected={tab === t} onClick={() => setTab(t)} className={cn('min-h-[44px] rounded font-label text-xs font-bold uppercase tracking-widest', tab === t ? 'bg-crimson-btn text-white' : 'text-ash hover:bg-[rgba(229,9,32,0.15)]')}>
             {t === 'map' ? `Assumptions (${assumptions.length})` : `Rivals (${competitors.length})`}
           </button>
         ))}

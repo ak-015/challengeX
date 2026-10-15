@@ -80,7 +80,7 @@ cd backend
 npm install
 ```
 
-- `package.json` scripts: `build` = `prisma generate && tsc -p tsconfig.build.json`, `postinstall` = `prisma generate`, plus `dev`, `typecheck`, `db:push`, `db:seed`, `db:migrate`, `smoke`.
+- `package.json` scripts: `build` = `prisma generate && tsc -p tsconfig.build.json`, `postinstall` = `prisma generate`, plus `dev`, `typecheck`, `db:push`, `db:seed`, `db:migrate` / `prisma:migrate`, `prisma:generate`, `smoke`.
 - `node_modules` + the generated Prisma Client are git-ignored (`node_modules/`, plus a `.gitignore`-friendly layout). Commit `package-lock.json`.
 
 ---
@@ -117,7 +117,7 @@ npm run db:seed
 
 Expected output: the schema is applied, the Prisma client is generated, and each configured admin email is seeded as a verified account with a bcrypt-hashed password. `npm run db:seed` is safe to re-run and skips when `ADMIN_EMAILS` is empty.
 
-> If you change `prisma/schema.prisma` later, re-run `npx prisma db push` (dev) or `npx prisma migrate dev` (prod-ready migrations). `npm run db:push` and `npm run db:migrate` are the npm wrappers.
+> If you change `prisma/schema.prisma` later, re-run `npx prisma db push` (dev) or `npx prisma migrate dev` (prod-ready migrations). `npm run db:push` and either `npm run db:migrate` or `npm run prisma:migrate` apply schema changes; `npm run prisma:generate` regenerates the Prisma Client.
 
 ---
 

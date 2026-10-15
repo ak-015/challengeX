@@ -10,7 +10,7 @@ export function ExportCard({ data }: { data: VerdictData }) {
   const top = data.struggles.slice(0, 3);
   const exp = data.validationExperiment;
   return (
-    <div style={{ width: 1080, height: 1350, background: '#050505', color: '#f5efe9', padding: 56, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 24, border: '6px solid #c4121f', fontFamily: 'Georgia, serif' }}>
+    <div style={{ width: 1080, height: 1350, background: '#070506', color: '#f5efe9', padding: 56, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 24, border: '6px solid #c4121f', fontFamily: 'Georgia, serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'Cinzel, serif' }}>
         <span style={{ fontSize: 26, letterSpacing: 6, color: '#ff8a93', fontWeight: 700 }}>CHALLENGEX</span>
         <span style={{ fontSize: 22, color: '#d9d2cb' }}>{data.mode ? MODES[data.mode].label : ''}</span>

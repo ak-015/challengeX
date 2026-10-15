@@ -51,11 +51,11 @@ export function Root() {
   );
 }
 
-/** Everything except the gate and public shares requires auth. */
+/** Everything except the landing page, the gate and public shares requires auth. */
 export function RequireAuth() {
   const { token, user, status } = useAuth();
   const location = useLocation();
-  if (!token) return <Navigate to="/" replace state={{ from: location.pathname }} />;
+  if (!token) return <Navigate to="/gate" replace state={{ from: location.pathname }} />;
   if (!user) {
     return status === 'checking' || status === 'idle' ? <Splash label="Opening the gates…" /> : <Splash label="Reconnecting to the realm…" />;
   }

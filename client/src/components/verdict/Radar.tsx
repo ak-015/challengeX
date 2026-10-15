@@ -16,10 +16,10 @@ export function Radar({ scores, animate = true, size = 380 }: { scores: Record<C
           return <line key={i} x1={0} y1={0} x2={p.x} y2={p.y} stroke="#5a3a3d" strokeWidth="1" />;
         })}
         <g className={animate ? 'radar-grow' : undefined}>
-          <polygon points={radarPoints(scores, R)} fill="rgba(225,29,46,0.4)" stroke="#ff5a67" strokeWidth="2.5" strokeLinejoin="round" />
+          <polygon points={radarPoints(scores, R)} fill="rgba(229,9,32,0.4)" stroke="#ff5a67" strokeWidth="2.5" strokeLinejoin="round" />
           {CATEGORIES.map((c, i) => {
             const p = polar(axisAngle(i), (Math.max(0, Math.min(10, scores[c] ?? 0)) / 10) * R);
-            return <circle key={c} cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#e11d2e" strokeWidth="2" />;
+            return <circle key={c} cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#e50920" strokeWidth="2" />;
           })}
         </g>
         {CATEGORIES.map((c, i) => {

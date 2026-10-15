@@ -20,6 +20,7 @@ const PATHS = {
   scroll: 'M7 4h11a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6M7 4a2 2 0 00-2 2v1h3M10 9h7M10 13h7M10 17h5',
   chevronDown: 'M6 9l6 6 6-6',
   chevronRight: 'M9 6l6 6-6 6',
+  menu: 'M4 7h16M4 12h16M4 17h16',
   plus: 'M12 5v14M5 12h14',
   copy: 'M9 9h10v11H9zM5 15V4h10',
   download: 'M12 4v11M7 11l5 5 5-5M5 20h14',

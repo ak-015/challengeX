@@ -1,4 +1,4 @@
-import { forwardRef, useId, type InputHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 interface Shared {
@@ -70,6 +70,35 @@ export const TextAreaField = forwardRef<
           </p>
         )}
       </div>
+    </div>
+  );
+});
+
+export const SelectField = forwardRef<HTMLSelectElement, Shared & SelectHTMLAttributes<HTMLSelectElement>>(function SelectField(
+  { label, error, hint, className, id, children, ...rest },
+  ref,
+) {
+  const auto = useId();
+  const fid = id ?? auto;
+  const describedBy = [error ? `${fid}-err` : null, hint ? `${fid}-hint` : null].filter(Boolean).join(' ') || undefined;
+  return (
+    <div className={className}>
+      <label htmlFor={fid} className="mb-1 block font-label text-sm font-semibold tracking-wide text-ash">
+        {label}
+      </label>
+      <select ref={ref} id={fid} className="field" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...rest}>
+        {children}
+      </select>
+      {hint && (
+        <p id={`${fid}-hint`} className="mt-1 text-sm text-ash-dim">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${fid}-err`} role="alert" className="mt-1 text-sm text-crimson-text">
+          {error}
+        </p>
+      )}
     </div>
   );
 });

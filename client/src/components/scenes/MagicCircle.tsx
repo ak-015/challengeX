@@ -34,14 +34,15 @@ export function MagicCircle({ className }: { className?: string }) {
   );
 }
 
-export type CirclePose = 'menu' | 'dais' | 'dais-dim' | 'none';
+export type CirclePose = 'menu' | 'dais' | 'dais-dim' | 'floor' | 'none';
 
 /**
  * ONE persistent circle in the app shell. It stays mounted across routes and moves between poses with a single
- * CSS transform transition (translate / rotateX tilt / scale): the menu centre -> the altar dais.
+ * CSS transform transition (translate / rotateX tilt / scale): the menu centre -> the altar dais -> the Paths
+ * ritual floor (tilted across the lower foreground).
  */
 export function MagicCircleLayer({ pose }: { pose: CirclePose }) {
-  const [geo, setGeo] = useState({ k: 1, ty: 0, size: 600 });
+  const [geo, setGeo] = useState({ k: 1, ty: 0, kf: 1, tyf: 0, size: 600 });
   const flareKey = useFx((s) => s.flareKey);
   const [flaring, setFlaring] = useState(false);
   const first = useRef(true);
@@ -53,8 +54,15 @@ export function MagicCircleLayer({ pose }: { pose: CirclePose }) {
       const stageW = Math.max(w, 1.7778 * h);
       const stageH = Math.max(0.5625 * w, h);
       const size = Math.min(0.86 * w, 0.8 * h, 760);
-      // dais top centre sits at (50%, 62.2%) of the stage; its ring is ~35% of the stage width
-      setGeo({ k: (0.35 * stageW) / size, ty: (560 / 900 - 0.5) * stageH, size });
+      // dais top centre sits at (50%, 62.2%) of the stage; its ring is ~35% of the stage width.
+      // The floor pose spans the lower foreground of the Paths page (~74vw wide, centred at 75.5% height).
+      setGeo({
+        k: (0.35 * stageW) / size,
+        ty: (560 / 900 - 0.5) * stageH,
+        kf: Math.min(0.74 * w, 1.35 * h) / size,
+        tyf: (0.755 - 0.5) * h,
+        size,
+      });
     };
     measure();
     window.addEventListener('resize', measure);
@@ -72,8 +80,13 @@ export function MagicCircleLayer({ pose }: { pose: CirclePose }) {
   }, [flareKey]);
 
   const onDais = pose === 'dais' || pose === 'dais-dim';
-  const transform = onDais ? `translateY(${geo.ty}px) rotateX(76deg) scale(${geo.k})` : 'translateY(0px) rotateX(0deg) scale(1)';
-  const opacity = pose === 'none' ? 0 : pose === 'dais-dim' ? 0.4 : 1;
+  const onFloor = pose === 'floor';
+  const transform = onDais
+    ? `translateY(${geo.ty}px) rotateX(76deg) scale(${geo.k})`
+    : onFloor
+      ? `translateY(${geo.tyf}px) rotateX(80deg) scale(${geo.kf})`
+      : 'translateY(0px) rotateX(0deg) scale(1)';
+  const opacity = pose === 'none' ? 0 : pose === 'dais-dim' ? 0.4 : onFloor ? 0.85 : 1;
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[2] flex items-center justify-center" style={{ perspective: 1400 }}>

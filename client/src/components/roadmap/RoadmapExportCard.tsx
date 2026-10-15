@@ -23,7 +23,7 @@ export default function RoadmapExportCard({ title, graph }: { title: string; gra
   const kind = new Map(graph.edges.map((e) => [`${e.from}>${e.to}`, e.kind]));
 
   return (
-    <div style={{ width: 1080, height: 1350, background: '#050505', color: '#f5efe9', padding: 56, boxSizing: 'border-box', border: '6px solid #c4121f', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: 'Georgia, serif' }}>
+    <div style={{ width: 1080, height: 1350, background: '#070506', color: '#f5efe9', padding: 56, boxSizing: 'border-box', border: '6px solid #c4121f', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: 'Georgia, serif' }}>
       <div style={{ fontFamily: 'Cinzel, serif', fontSize: 26, letterSpacing: 6, color: '#ff8a93', fontWeight: 700 }}>CHALLENGEX · ROADMAP</div>
       <div style={{ fontFamily: 'Cinzel Decorative, Cinzel, serif', fontSize: 42, fontWeight: 700, lineHeight: 1.15, color: '#fff' }}>{title}</div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

@@ -56,7 +56,7 @@ export function verdictForScore(total: number): Verdict {
 }
 
 export const VERDICT_STYLE: Record<Verdict, { label: string; text: string; ring: string; blurb: string }> = {
-  KILL: { label: 'KILL', text: '#ff8a93', ring: '#e11d2e', blurb: 'Do not build this as it stands.' },
+  KILL: { label: 'KILL', text: '#ff8a93', ring: '#e50920', blurb: 'Do not build this as it stands.' },
   PIVOT: { label: 'PIVOT', text: '#ffd27a', ring: '#e8a33a', blurb: 'Promising core. Change direction.' },
   BUILD: { label: 'BUILD', text: '#8ff0b4', ring: '#3fcf7f', blurb: 'It survived. Go and prove it.' },
 };
