@@ -1,58 +1,50 @@
-import { Link, useParams } from 'react-router-dom';
-import { ButtonLink } from '@/components/ui/Button';
-import { GlassPanel } from '@/components/ui/GlassPanel';
-import { Heading } from '@/components/ui/Heading';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { Link } from 'react-router-dom';
 
-const CONTENT: Record<'privacy' | 'terms', { title: string; body: string[] }> = {
-  privacy: {
-    title: 'Privacy Policy',
-    body: [
-      'This page is a placeholder. ChallengeX has not published a final privacy policy yet.',
-      'In short: your account email, display name, ideas, trials, verdicts, and roadmaps are stored so the product can work. Nothing is sold. Nothing is shared publicly unless you explicitly create a share link.',
-      'The full policy will replace this text before launch.',
-    ],
-  },
-  terms: {
-    title: 'Terms of Service',
-    body: [
-      'This page is a placeholder. ChallengeX has not published final terms of service yet.',
-      'In short: ChallengeX provides AI-generated analysis of your ideas for decision support. Verdicts and roadmaps are advisory, not professional business, legal, or financial advice.',
-      'The full terms will replace this text before launch.',
-    ],
-  },
-};
-
-export function Component() {
-  const { doc } = useParams();
-  const kind = doc === 'terms' ? 'terms' : 'privacy';
-  const c = CONTENT[kind];
-  useDocumentTitle(`${c.title} — ChallengeX`);
-
+/** Simple legal content pages referenced by footer + auth screens. */
+export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
+  const isPrivacy = kind === 'privacy';
   return (
-    <div className="safe-pad mx-auto max-w-2xl space-y-6 py-16">
-      <div className="text-center">
-        <Heading level={1}>{c.title}</Heading>
-        <div className="rune-divider mt-3" aria-hidden="true">
-          <span />
-        </div>
-      </div>
-      <GlassPanel className="space-y-4 p-6 sm:p-8">
-        {c.body.map((p, i) => (
-          <p key={i} className="font-prose text-lg leading-relaxed text-ash-dim">
-            {p}
-          </p>
-        ))}
-      </GlassPanel>
-      <div className="text-center">
-        <ButtonLink to="/" variant="ghost" size="sm">
-          Back to the landing page
-        </ButtonLink>
-        <p className="mt-4 font-prose text-sm text-ash-faint">
-          <Link to={kind === 'privacy' ? '/terms' : '/privacy'} className="underline hover:text-crimson-text">
-            {kind === 'privacy' ? 'Terms of Service' : 'Privacy Policy'}
-          </Link>
-        </p>
+    <div className="mx-auto max-w-3xl">
+      <Link to="/" className="text-xs font-heading uppercase tracking-widest text-crimson-glow hover:underline">
+        ← Back to home
+      </Link>
+      <h1 className="font-display text-3xl sm:text-4xl text-parchment mt-4 mb-6">
+        {isPrivacy ? 'Privacy Policy' : 'Terms of Service'}
+      </h1>
+      <div className="gothic-panel p-6 sm:p-8 space-y-5 font-narrative text-lg text-parchment-dim leading-relaxed">
+        {isPrivacy ? (
+          <>
+            <p>
+              ChallengeX stores your account email, display name, and the ideas, trials, roadmaps and shares you
+              create. Passwords are stored only as bcrypt hashes on the server and are never visible to the client.
+            </p>
+            <p>
+              Authentication uses a signed bearer token kept in your browser's local storage. A 401 response clears
+              it immediately. We do not embed API keys, database credentials or backend secrets in browser code.
+            </p>
+            <p>
+              AI providers receive the text you submit for analysis to generate clarifications, questions, verdicts
+              and roadmaps. Uploaded avatars and exports are stored by Cloudinary under account-scoped folders.
+            </p>
+            <p>Contact support@challengex.app to request export or deletion of your data.</p>
+          </>
+        ) : (
+          <>
+            <p>
+              You agree to use ChallengeX for evaluating your own business or project ideas and to answer trial
+              questions honestly — the value of the verdict depends on the honesty of the input.
+            </p>
+            <p>
+              Verdicts, scores and roadmaps are AI-generated decision-support material, not professional financial,
+              legal or investment advice. You remain solely responsible for the decisions you make.
+            </p>
+            <p>
+              Do not submit confidential third-party information you are not authorized to share. Accounts found
+              abusing the service may be suspended by administrators.
+            </p>
+            <p>Contact support@challengex.app with questions about these terms.</p>
+          </>
+        )}
       </div>
     </div>
   );

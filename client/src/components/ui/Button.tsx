@@ -1,50 +1,31 @@
-import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes } from 'react';
-import { Link, type LinkProps } from 'react-router-dom';
-import { cn } from '@/lib/cn';
-import { Spinner } from './Spinner';
-
-type Variant = 'primary' | 'ghost' | 'quiet' | 'danger';
-type Size = 'md' | 'sm';
-
-const variantClass: Record<Variant, string> = { primary: '', ghost: 'btn-ghost', quiet: 'btn-quiet', danger: 'btn-danger' };
-const cls = (v: Variant, s: Size, extra?: string) => cn('btn', variantClass[v], s === 'sm' && 'btn-sm', extra);
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import clsx from 'clsx';
+import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
-  /** Shows a spinner, sets aria-busy and blocks clicks (prevents double submit). */
+  variant?: 'primary' | 'ghost' | 'danger';
   loading?: boolean;
+  children: ReactNode;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', loading, disabled, className, children, type = 'button', onClick, ...rest },
-  ref,
-) {
+export function Button({ variant = 'primary', loading, children, className, disabled, ...rest }: ButtonProps) {
   return (
     <button
-      ref={ref}
-      type={type}
-      className={cls(variant, size, className)}
-      disabled={disabled}
-      aria-busy={loading || undefined}
-      aria-disabled={loading || undefined}
-      onClick={loading ? (e) => e.preventDefault() : onClick}
+      className={clsx(
+        'inline-flex items-center justify-center gap-2 font-heading uppercase tracking-widest text-sm rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3',
+        variant === 'primary' &&
+          'bg-crimson hover:bg-crimson-glow text-white border border-crimson-glow/40 shadow-crimson-sm hover:shadow-crimson-md',
+        variant === 'ghost' &&
+          'bg-transparent hover:bg-crimson-soft text-parchment-dim hover:text-parchment border border-[var(--border-subtle)] hover:border-[var(--border-visible)]',
+        variant === 'danger' &&
+          'bg-transparent hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-red-900/50 hover:border-red-700',
+        className,
+      )}
+      disabled={disabled || loading}
       {...rest}
     >
-      {loading && <Spinner size={16} />}
+      {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
       {children}
     </button>
   );
-});
-
-interface ButtonLinkProps extends LinkProps {
-  variant?: Variant;
-  size?: Size;
-}
-export function ButtonLink({ variant = 'primary', size = 'md', className, ...rest }: ButtonLinkProps) {
-  return <Link className={cls(variant, size, className)} {...rest} />;
-}
-
-export function ButtonAnchor({ variant = 'ghost', size = 'md', className, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: Variant; size?: Size }) {
-  return <a className={cls(variant, size, className)} {...rest} />;
 }

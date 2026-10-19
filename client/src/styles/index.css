@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #070606;
+  --surface: #100909;
+  --surface-elevated: #170909;
+  --surface-hover: #210a0d;
+  --crimson: #e50920;
+  --crimson-dark: #760b12;
+  --crimson-glow: #ff2638;
+  --crimson-soft: rgba(229, 9, 32, 0.12);
+  --text-primary: #e9dfd0;
+  --text-secondary: #a79a8b;
+  --text-muted: #71665e;
+  --border-subtle: rgba(229, 9, 32, 0.18);
+  --border-visible: rgba(229, 9, 32, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Cinzel', serif;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--crimson-dark);
+  border-radius: 6px;
+}
+
+/* Global full-screen dark-fantasy background (Crimson_Moon_Over_Gothic_Cathedral.webp,
+   served as /assets/realm-background.webp). Fixed layer rendered once inside the
+   shared AppShell; z-0 keeps it above the shell's base color but below content
+   (content wrappers use relative z-10+). Subtle scrim preserves text contrast
+   while keeping the moon, cathedral and flames visible. */
+.app-background {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background-image:
+    linear-gradient(
+      rgba(5, 3, 4, 0.28),
+      rgba(5, 3, 4, 0.42)
+    ),
+    url('/assets/realm-background.webp');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Paths-page-only background: gothic cathedral interior with the floor ritual
+   circle (challengex-how-it-works-bg.webp, served as /assets/ritual-chamber.webp).
+   Fixed-position layer instead of background-attachment:fixed for reliable
+   mobile rendering. Sits above the global .app-background (z-0) and below the
+   page content (z-10); starts below the 4rem (h-16) sticky header. */
+.paths-background {
+  position: fixed;
+  top: 4rem; /* matches header height: h-16 */
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image:
+    linear-gradient(
+      rgba(5, 3, 4, 0.20),
+      rgba(5, 3, 4, 0.35)
+    ),
+    url('/assets/ritual-chamber.webp');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  z-index: 0; /* same level as Embers/Fog (tree-ordered after it); content uses z-10 */
+  pointer-events: none;
+}
+
+@layer components {
+  .gothic-panel {
+    @apply bg-surface border border-[var(--border-subtle)] rounded-lg shadow-stone;
+  }
+  .gothic-input {
+    @apply w-full bg-[#0b0606] border border-[var(--border-subtle)] rounded-md px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-visible)] focus:ring-1 focus:ring-[var(--border-visible)] transition-colors font-body;
+  }
+  .gothic-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-crimson hover:bg-crimson-glow text-white font-heading uppercase tracking-widest text-sm px-6 py-3 rounded-md border border-crimson-glow/40 shadow-crimson-sm hover:shadow-crimson-md transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .gothic-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 bg-transparent hover:bg-crimson-soft text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-heading uppercase tracking-widest text-sm px-6 py-3 rounded-md border border-[var(--border-subtle)] hover:border-[var(--border-visible)] transition-all;
+  }
+}
+
+/* Focus visibility for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--crimson-glow);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

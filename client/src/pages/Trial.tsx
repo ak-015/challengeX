@@ -1,253 +1,243 @@
-import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { m } from 'framer-motion';
-import { RuneLogo } from '@/components/art/RuneLogo';
-import { AssumptionMap } from '@/components/trial/AssumptionMap';
-import { ExtensionCard } from '@/components/trial/ExtensionCard';
-import { ProgressRunes } from '@/components/trial/ProgressRunes';
-import { UnderstandingCard } from '@/components/trial/UnderstandingCard';
-import { useTrial } from '@/components/trial/useTrial';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Send, SkipForward, Gavel, ChevronRight } from 'lucide-react';
+import { errorMessage } from '@/services/api';
+import { trialsService } from '@/services/trials';
+import { Spinner, ErrorState } from '@/components/ui/States';
 import { Button } from '@/components/ui/Button';
-import { CategoryTag } from '@/components/ui/CategoryTag';
-import { TextAreaField } from '@/components/ui/Fields';
-import { GlassPanel } from '@/components/ui/GlassPanel';
-import { Icon } from '@/components/ui/Icon';
-import { Spinner } from '@/components/ui/Spinner';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useReducedMotion } from '@/hooks/useMedia';
-import { MAX_ANSWER_CHARS } from '@/lib/constants';
-import { pendingOf } from '@/lib/trialLogic';
+import { Textarea } from '@/components/ui/Form';
+import { ProgressBar } from '@/components/ui/Badge';
+import { RISK_CATEGORIES, MODES, isDone, isExtension, isQuestion } from '@/types/api';
+import type { Assumption, Competitor, ModeKey, NextQuestionResponse, Progress, TrialExtension } from '@/types/api';
 
-export function Component() {
+const categoryLabel: Record<string, string> = Object.fromEntries(RISK_CATEGORIES.map((c) => [c, c]));
+
+export function TrialPage() {
   const { id = '' } = useParams();
-  const { state, begin, saveUnderstanding, answer, retry, chooseExtension } = useTrial(id);
-  useDocumentTitle(state.title || 'The Trial');
-  const reduced = useReducedMotion();
+  const navigate = useNavigate();
 
-  const [draft, setDraft] = useState('');
-  const [confirmSkip, setConfirmSkip] = useState(false);
-  const [drawer, setDrawer] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<'loading' | 'question' | 'done' | 'extension'>('loading');
+  const [question, setQuestion] = useState<{ id: string; index: number; category: string; text: string } | null>(null);
+  const [progress, setProgress] = useState<Progress>({ asked: 0, plannedTotal: 0 });
+  const [assumptions, setAssumptions] = useState<Assumption[]>([]);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
+  const [extension, setExtension] = useState<TrialExtension | null>(null);
+  const [answer, setAnswer] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [fatal, setFatal] = useState<string | null>(null);
 
-  const pending = pendingOf(state.qa);
-  const busy = state.busy !== null;
-  const sidebarCount = state.assumptions.length;
+  // Load the trial once for title/mode context.
+  const { data: session, error: loadError } = useQuery({
+    queryKey: ['trial', id],
+    queryFn: () => trialsService.get(id),
+    enabled: !!id,
+    retry: false,
+  });
 
+  const handleNext = useCallback(
+    async (currentId: string) => {
+      setBusy(true);
+      setFatal(null);
+      try {
+        const res: NextQuestionResponse = await trialsService.next(currentId);
+        if (isQuestion(res)) {
+          setQuestion(res.question);
+          setProgress(res.progress);
+          setAssumptions(res.assumptions);
+          if (res.competitors) setCompetitors(res.competitors);
+          setPhase('question');
+        } else if (isExtension(res)) {
+          setExtension(res.extension);
+          setProgress(res.progress);
+          setAssumptions(res.assumptions);
+          setPhase('extension');
+        } else if (isDone(res)) {
+          setProgress(res.progress);
+          setAssumptions(res.assumptions);
+          setPhase('done');
+        }
+      } catch (err) {
+        setFatal(errorMessage(err));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [],
+  );
+
+  // Kick off / advance on mount.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'end' });
-  }, [state.qa.length, state.busy, state.error, reduced]);
+    if (id) void handleNext(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  useEffect(() => {
-    setConfirmSkip(false);
-  }, [pending?.id]);
-
-  const submit = async () => {
-    const text = draft.trim();
-    if (!text || busy || !pending) return;
-    const ok = await answer(text, false);
-    if (ok) setDraft(''); // cleared only after the server accepted it
-  };
-  const doSkip = async () => {
-    setConfirmSkip(false);
-    await answer('', true);
-  };
-  const onSkipClick = () => {
-    if (state.skippedCount >= 3) setConfirmSkip(true); // the 4th skip lowers confidence
-    else void doSkip();
+  const sendAnswer = async (skipped: boolean) => {
+    if (!question) return;
+    if (!skipped && !answer.trim()) return;
+    setBusy(true);
+    setFatal(null);
+    try {
+      await trialsService.answer(id, question.id, skipped ? undefined : answer.trim(), skipped);
+      setAnswer('');
+      await handleNext(id);
+    } catch (err) {
+      setFatal(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (state.phase === 'loading') {
-    return (
-      <div className="safe-pad mx-auto max-w-xl py-16 text-center">
-        {state.error ? (
-          <GlassPanel role="alert" className="space-y-4 p-6">
-            <p className="font-prose text-ash">{state.error.message}</p>
-            <Button onClick={retry}>
-              <Icon name="retry" size={16} /> Retry
-            </Button>
-          </GlassPanel>
-        ) : (
-          <p role="status" className="inline-flex items-center gap-3 font-label text-ash">
-            <Spinner /> Opening the trial…
-          </p>
-        )}
-      </div>
-    );
-  }
+  const resolveExt = async (action: 'continue' | 'verdict') => {
+    setBusy(true);
+    setFatal(null);
+    try {
+      await trialsService.resolveExtension(id, action);
+      if (action === 'verdict') {
+        navigate(`/challenge/${id}/verdict`);
+      } else {
+        await handleNext(id);
+      }
+    } catch (err) {
+      setFatal(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  if (state.phase === 'understanding' && state.understanding) {
-    return (
-      <div className="safe-pad mx-auto flex min-h-[calc(100dvh-56px)] max-w-2xl items-center py-6">
-        <div className="w-full">
-          <UnderstandingCard understanding={state.understanding} onSave={saveUnderstanding} onBegin={begin} busy={busy} />
-          {state.error && (
-            <p role="alert" className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded border border-[#ff6b76] bg-[#2a0408] p-3 text-sm text-ash">
-              {state.error.message}
-              <Button size="sm" variant="ghost" onClick={retry}>
-                <Icon name="retry" size={16} /> Retry
-              </Button>
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const requestVerdict = async () => {
+    setBusy(true);
+    setFatal(null);
+    try {
+      const v = await trialsService.verdict(id);
+      navigate(`/challenge/${id}/verdict`, { state: { verdict: v } });
+    } catch (err) {
+      setFatal(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  if (state.phase === 'extension' && state.extension?.status === 'offered') {
-    return (
-      <div className="safe-pad mx-auto flex min-h-[calc(100dvh-56px)] max-w-3xl flex-col justify-center gap-5 py-6">
-        <GlassPanel className="p-4" corners={false}>
-          <ProgressRunes qa={state.qa} plannedTotal={state.progress.plannedTotal} />
-        </GlassPanel>
-        <ExtensionCard
-          extension={state.extension}
-          busy={busy}
-          error={state.error}
-          onContinue={() => chooseExtension('continue')}
-          onVerdict={() => chooseExtension('verdict')}
-          onRetry={retry}
-        />
-      </div>
-    );
-  }
+  if (loadError) return <ErrorState message={errorMessage(loadError)} />;
+  if (phase === 'loading') return <Spinner label="Consulting the oracle…" />;
+  if (fatal) return <ErrorState message={fatal} onRetry={() => setFatal(null)} />;
 
-  const sidebar = <AssumptionMap assumptions={state.assumptions} competitors={state.competitors} />;
+  const modeKey = (session?.mode ?? 'stress_test') as ModeKey;
+  const modeLabel = MODES[modeKey]?.label ?? session?.mode ?? 'Stress Test';
 
   return (
-    <div className="safe-pad mx-auto grid max-w-6xl gap-5 py-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section aria-label="The trial" className="flex min-h-[calc(100dvh-90px)] min-w-0 flex-col">
-        <GlassPanel className="mb-3 p-4" corners={false}>
-          <ProgressRunes qa={state.qa} plannedTotal={state.progress.plannedTotal} />
-        </GlassPanel>
-
-        <div role="log" aria-live="polite" aria-relevant="additions" className="scroll-thin flex-1 space-y-5 pb-4">
-          {state.qa.map((q) => (
-            <div key={q.id} className="space-y-3">
-              <m.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-3">
-                <span className="mt-1 shrink-0 rounded-full border border-crimson bg-black p-0.5">
-                  <RuneLogo size={36} />
-                </span>
-                <div className={`min-w-0 max-w-[92%] rounded-lg border p-4 ${pending?.id === q.id ? 'border-crimson-text bg-[rgba(30,6,9,0.9)]' : 'border-[rgba(185,176,168,0.35)] bg-[rgba(12,6,7,0.85)]'}`}>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <CategoryTag category={q.category} />
-                    <span className="sr-only">Challenger, question {q.index}:</span>
-                  </div>
-                  <p className="font-label text-lg font-semibold leading-snug text-ash sm:text-xl">{q.text}</p>
-                </div>
-              </m.div>
-              {(q.answer !== null || q.skipped) && (
-                <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
-                  <div className="max-w-[88%] rounded-lg border border-[#7a2a30] bg-[#2a0b0f] p-3">
-                    <span className="sr-only">Your answer:</span>
-                    {q.skipped ? <p className="font-prose italic text-ash-dim">Skipped</p> : <p className="whitespace-pre-wrap break-words font-prose text-ash">{q.answer}</p>}
-                  </div>
-                </m.div>
-              )}
-            </div>
-          ))}
-
-          {busy && (
-            <p role="status" className="flex items-center gap-3 font-label text-ash">
-              <Spinner /> {state.busy === 'scouting' ? 'Scouting the realm for rivals…' : 'The Challenger ponders…'}
-            </p>
-          )}
-          {state.error && (
-            <div role="alert" className="flex flex-wrap items-center gap-3 rounded border border-[#ff6b76] bg-[#2a0408] p-3 text-sm text-ash">
-              <Icon name="warning" size={18} className="text-crimson-text" />
-              <span className="min-w-0 flex-1">{state.error.message} Your answers are safe.</span>
-              {state.error.retryable && (
-                <Button size="sm" variant="ghost" onClick={retry}>
-                  <Icon name="retry" size={16} /> Retry
-                </Button>
-              )}
-            </div>
-          )}
-          <div ref={endRef} />
+    <div className="mx-auto max-w-3xl space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-heading uppercase tracking-[0.25em] text-crimson-glow">{modeLabel} Trial</p>
+          <h1 className="font-display text-2xl sm:text-3xl text-parchment">{session?.title ?? 'Trial'}</h1>
         </div>
+        <div className="w-full sm:w-56">
+          <ProgressBar value={progress.asked} max={progress.plannedTotal} label="Progress" />
+        </div>
+      </header>
 
-        {pending && (
-          <GlassPanel className="sticky bottom-2 z-20 space-y-3 p-4" corners={false}>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void submit();
-              }}
-              className="space-y-3"
-            >
-              <TextAreaField
-                label="Your answer"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    void submit();
-                  }
-                }}
-                rows={3}
-                maxLength={MAX_ANSWER_CHARS}
-                counter={{ value: draft.length, max: MAX_ANSWER_CHARS }}
-                hint="Ctrl/Cmd + Enter to send"
-                disabled={busy}
-              />
-              {confirmSkip ? (
-                <div role="alert" className="rounded border border-[#f2b84a] bg-[#2a1d05] p-3 text-sm text-ash">
-                  <p>Skipping a 4th question lowers the confidence of your verdict. Skip anyway?</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button size="sm" variant="danger" onClick={() => void doSkip()}>
-                      Skip anyway
-                    </Button>
-                    <Button size="sm" variant="quiet" onClick={() => setConfirmSkip(false)}>
-                      Answer instead
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Button type="button" variant="quiet" size="sm" onClick={onSkipClick} disabled={busy}>
-                    Skip this question
-                  </Button>
-                  <Button type="submit" loading={busy} disabled={!draft.trim()}>
-                    Answer
-                  </Button>
-                </div>
-              )}
-            </form>
-          </GlassPanel>
-        )}
-      </section>
-
-      {/* desktop sidebar */}
-      <aside aria-label="Assumption map" className="hidden lg:block">
-        <GlassPanel className="scroll-thin sticky top-[72px] max-h-[calc(100dvh-90px)] overflow-y-auto p-4">
-          <h2 className="mb-3 font-label text-base font-bold tracking-wide text-ash">Assumption Map</h2>
-          {sidebar}
-        </GlassPanel>
-      </aside>
-
-      {/* mobile drawer */}
-      <div className="lg:hidden">
-        <button type="button" className="btn fixed bottom-24 right-3 z-30 !rounded-full shadow-glow" onClick={() => setDrawer(true)} aria-haspopup="dialog">
-          <Icon name="layers" size={18} /> Map
-          <span className="ml-1 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold text-black" aria-label={`${sidebarCount} assumptions`}>
-            {sidebarCount}
-          </span>
-        </button>
-        {drawer && (
-          <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Assumption map">
-            <button type="button" aria-label="Close assumption map" className="absolute inset-0 bg-black/70" onClick={() => setDrawer(false)} />
-            <m.div initial={{ y: '100%' }} animate={{ y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }} className="glass scroll-thin absolute inset-x-0 bottom-0 max-h-[80dvh] overflow-y-auto rounded-b-none p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-label text-lg font-bold text-ash">Assumption Map</h2>
-                <button type="button" className="inline-flex h-11 w-11 items-center justify-center text-ash" onClick={() => setDrawer(false)} aria-label="Close">
-                  <Icon name="close" />
-                </button>
-              </div>
-              {sidebar}
-            </m.div>
+      {phase === 'question' && question && (
+        <div className="gothic-panel p-6 sm:p-8 space-y-5" aria-live="polite">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-heading uppercase tracking-[0.2em] text-parchment-dim">
+              Question {question.index} of {progress.plannedTotal}
+            </span>
+            <span className="rounded border border-[var(--border-visible)] bg-crimson-soft px-2.5 py-0.5 text-xs font-heading uppercase tracking-widest text-crimson-glow">
+              {categoryLabel[question.category] ?? question.category}
+            </span>
           </div>
-        )}
-      </div>
+          <p className="font-narrative text-xl sm:text-2xl leading-relaxed text-parchment">{question.text}</p>
+          <Textarea
+            label="Your Answer"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            maxLength={1500}
+            placeholder="Defend your idea — specifics beat optimism…"
+            hint={`${answer.length}/1500 characters`}
+            id="answer-box"
+          />
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <Button variant="ghost" onClick={() => sendAnswer(true)} loading={busy}>
+              <SkipForward className="h-4 w-4" aria-hidden />
+              Skip
+            </Button>
+            <Button onClick={() => sendAnswer(false)} loading={busy} disabled={!answer.trim()}>
+              <Send className="h-4 w-4" aria-hidden />
+              Send
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'extension' && extension && (
+        <div className="gothic-panel p-6 sm:p-8 space-y-5 border border-[var(--border-visible)]" aria-live="polite">
+          <h2 className="font-heading text-xl text-parchment">The Interrogation Could Go Deeper</h2>
+          <p className="font-narrative text-lg text-parchment-dim italic leading-relaxed">{extension.reason}</p>
+          <p className="text-sm text-parchment-faint">
+            Add {extension.additionalQuestions} more question{extension.additionalQuestions > 1 ? 's' : ''} for a sharper
+            verdict — or render the verdict now with lower confidence.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <Button variant="ghost" onClick={() => resolveExt('verdict')} loading={busy}>Render Verdict Now</Button>
+            <Button onClick={() => resolveExt('continue')} loading={busy}>Continue the Trial</Button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'done' && (
+        <div className="gothic-panel p-6 sm:p-8 text-center space-y-5">
+          <h2 className="font-heading text-xl text-parchment">Interrogation Complete</h2>
+          <p className="font-narrative text-lg text-parchment-dim italic">
+            {progress.asked} questions answered. The court is ready to render its judgment.
+          </p>
+          <Button onClick={requestVerdict} loading={busy} className="w-full sm:w-auto">
+            <Gavel className="h-4 w-4" aria-hidden />
+            Render the Verdict
+          </Button>
+        </div>
+      )}
+
+      {assumptions.length > 0 && (
+        <section className="gothic-panel p-6">
+          <h2 className="font-heading text-sm uppercase tracking-[0.2em] text-crimson-glow mb-3">
+            Assumptions on Record ({assumptions.length})
+          </h2>
+          <ul className="space-y-2">
+            {assumptions.map((a) => (
+              <li key={a.id} className="flex items-start gap-3 text-sm">
+                <span
+                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${a.risk === 'high' ? 'bg-red-500' : 'bg-amber-500'}`}
+                  aria-label={`${a.risk} risk`}
+                />
+                <span className="text-parchment-dim">
+                  <span className="font-heading uppercase text-xs tracking-widest text-parchment-faint mr-2">{a.category}</span>
+                  {a.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {competitors.length > 0 && (
+        <section className="gothic-panel p-6">
+          <h2 className="font-heading text-sm uppercase tracking-[0.2em] text-crimson-glow mb-3">Rivals in the Field</h2>
+          <ul className="space-y-3">
+            {competitors.map((c) => (
+              <li key={c.name} className="text-sm">
+                <div className="flex items-center gap-2">
+                  <ChevronRight className="h-3.5 w-3.5 text-crimson-glow" aria-hidden />
+                  <span className="font-heading text-parchment">{c.name}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-parchment-faint">{c.source}</span>
+                </div>
+                <p className="mt-1 pl-5 text-parchment-dim">{c.whatTheyDo}</p>
+                <p className="mt-0.5 pl-5 text-parchment-faint italic">{c.whyItMatters}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
