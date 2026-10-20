@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Send, SkipForward, Gavel, ChevronRight } from 'lucide-react';
@@ -26,6 +26,8 @@ export function TrialPage() {
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
   const [fatal, setFatal] = useState<string | null>(null);
+  const [judging, setJudging] = useState(false);
+  const initRef = useRef<string | null>(null);
 
   // Load the trial once for title/mode context.
   const { data: session, error: loadError } = useQuery({
@@ -67,10 +69,12 @@ export function TrialPage() {
   );
 
   // Kick off / advance on mount.
+  // (guarded so React StrictMode's double-mount cannot fire two /next calls)
   useEffect(() => {
-    if (id) void handleNext(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (!id || initRef.current === id) return;
+    initRef.current = id;
+    void handleNext(id);
+  }, [id, handleNext]);
 
   const sendAnswer = async (skipped: boolean) => {
     if (!question) return;
@@ -88,13 +92,27 @@ export function TrialPage() {
     }
   };
 
+  /** Generates the verdict and opens it. Used by both "done" and "render now". */
+  const renderVerdict = async () => {
+    setJudging(true);
+    setFatal(null);
+    try {
+      const v = await trialsService.verdict(id);
+      navigate(`/challenge/${id}/verdict`, { state: { verdict: v }, replace: true });
+    } catch (err) {
+      setJudging(false);
+      setFatal(errorMessage(err));
+    }
+  };
+
   const resolveExt = async (action: 'continue' | 'verdict') => {
     setBusy(true);
     setFatal(null);
     try {
       await trialsService.resolveExtension(id, action);
       if (action === 'verdict') {
-        navigate(`/challenge/${id}/verdict`);
+        // The extend endpoint only records the choice — the verdict itself must still be generated.
+        await renderVerdict();
       } else {
         await handleNext(id);
       }
@@ -105,22 +123,23 @@ export function TrialPage() {
     }
   };
 
-  const requestVerdict = async () => {
-    setBusy(true);
-    setFatal(null);
-    try {
-      const v = await trialsService.verdict(id);
-      navigate(`/challenge/${id}/verdict`, { state: { verdict: v } });
-    } catch (err) {
-      setFatal(errorMessage(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const requestVerdict = renderVerdict;
 
   if (loadError) return <ErrorState message={errorMessage(loadError)} />;
+  if (judging) return <Spinner label="The court deliberates…" />;
+  // A failed request must be retryable even before the first question has loaded.
+  if (fatal) {
+    return (
+      <ErrorState
+        message={fatal}
+        onRetry={() => {
+          setFatal(null);
+          void handleNext(id);
+        }}
+      />
+    );
+  }
   if (phase === 'loading') return <Spinner label="Consulting the oracle…" />;
-  if (fatal) return <ErrorState message={fatal} onRetry={() => setFatal(null)} />;
 
   const modeKey = (session?.mode ?? 'stress_test') as ModeKey;
   const modeLabel = MODES[modeKey]?.label ?? session?.mode ?? 'Stress Test';
@@ -167,6 +186,11 @@ export function TrialPage() {
               Send
             </Button>
           </div>
+          {busy && (
+            <p className="text-right text-xs italic text-parchment-faint" role="status">
+              The oracle weighs your answer…
+            </p>
+          )}
         </div>
       )}
 

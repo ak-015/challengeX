@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Smoke } from './Smoke';
 
 /**
  * Floating crimson embers. Pure CSS animation (cheap on mobile) with
@@ -40,17 +41,9 @@ export function Embers({ count = 18, className = '' }: { count?: number; classNa
   );
 }
 
-/** Layered drifting fog using radial gradients. */
-export function Fog({ className = '' }: { className?: string }) {
-  return (
-    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`} aria-hidden>
-      <div
-        className="absolute inset-0 animate-pulse-glow"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 40% at 20% 80%, rgba(118,11,18,0.25), transparent), radial-gradient(ellipse 70% 35% at 80% 90%, rgba(229,9,32,0.12), transparent)',
-        }}
-      />
-    </div>
-  );
+/** Drifting volumetric smoke that merges with the scene behind it (see Smoke). */
+export function Fog({ className = '', intensity = 1 }: { className?: string; intensity?: number }) {
+  return <Smoke className={className} intensity={intensity} />;
 }
+
+export { Smoke };

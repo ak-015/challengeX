@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,8 +10,7 @@ import { errorMessage } from '@/services/api';
 import { authService } from '@/services/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Form';
-import { assets } from '@/utils/assets';
-import { Embers, Fog } from '@/components/animations/Atmosphere';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 const registerSchema = z
   .object({
@@ -31,9 +30,8 @@ const registerSchema = z
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export function RegisterPage() {
-  const { loginWithToken } = useAuth();
+  const { loginWithToken, user } = useAuth();
   const { push } = useToast();
-  const navigate = useNavigate();
   const location = useLocation();
   const verifyEmail = (location.state as { verifyEmail?: string } | null)?.verifyEmail;
 
@@ -42,6 +40,7 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [otp, setOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
 
   const {
     register,
@@ -70,14 +69,17 @@ export function RegisterPage() {
   });
 
   const verify = async () => {
-    if (otp.length !== 6 || !pendingEmail) return;
+    if (otp.length !== 6 || !pendingEmail || verifying) return;
+    setVerifying(true);
     try {
       const r = await authService.verifyOtp(pendingEmail, otp);
-      loginWithToken(r.token, r.user);
       push('success', 'Account verified. Welcome to ChallengeX.');
-      navigate('/paths', { replace: true });
+      // Setting the session triggers the <Navigate> below, which sends the new
+      // member through the gate.
+      loginWithToken(r.token, r.user);
     } catch (err) {
       push('error', errorMessage(err));
+      setVerifying(false);
     }
   };
 
@@ -90,12 +92,12 @@ export function RegisterPage() {
     }
   };
 
+  if (user) return <Navigate to="/gate" replace />;
+
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-10">
-      <img src={assets.realmSecondary} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+      <RealmScene scene="secondary" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/95" aria-hidden />
-      <Embers count={14} />
-      <Fog />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="gothic-panel p-8 shadow-crimson-sm">
@@ -172,7 +174,7 @@ export function RegisterPage() {
                 placeholder="••••••"
               />
               <div className="flex gap-3">
-                <Button onClick={verify} loading={isSubmitting} disabled={otp.length !== 6} className="flex-1">
+                <Button onClick={verify} loading={verifying} disabled={otp.length !== 6} className="flex-1">
                   Verify &amp; Enter
                 </Button>
                 <Button variant="ghost" onClick={resend}>Resend</Button>

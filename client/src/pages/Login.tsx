@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,8 +9,7 @@ import { useToast } from '@/hooks/useToast';
 import { errorMessage, ApiError } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Form';
-import { assets } from '@/utils/assets';
-import { Embers, Fog } from '@/components/animations/Atmosphere';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email'),
@@ -19,14 +18,15 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const from = (location.state as { from?: string } | null)?.from ?? '/paths';
+  // Every sign-in passes through the gate unless the user was deep-linked somewhere specific.
+  const from = (location.state as { from?: string } | null)?.from ?? '/gate';
 
   const {
     register,
@@ -39,7 +39,7 @@ export function LoginPage() {
     try {
       await login(values.email, values.password);
       push('success', 'Welcome back to the realm.');
-      navigate(from, { replace: true });
+      // the <Navigate> below fires as soon as the session is set
     } catch (err) {
       if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED') {
         // Backend already resent a code; send the user to the verify screen.
@@ -50,12 +50,12 @@ export function LoginPage() {
     }
   });
 
+  if (user) return <Navigate to={from} replace />;
+
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-      <img src={assets.realmSecondary} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+      <RealmScene scene="secondary" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/95" aria-hidden />
-      <Embers count={14} />
-      <Fog />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="gothic-panel p-8 shadow-crimson-sm">

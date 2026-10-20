@@ -1,6 +1,6 @@
 import { Swords, Lightbulb, Map, History } from 'lucide-react';
 import { PathCard } from '@/components/cards/PathCard';
-import { Embers, Fog } from '@/components/animations/Atmosphere';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 const PATHS = [
   {
@@ -33,12 +33,9 @@ export function PathsPage() {
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
       {/* Paths-only background: gothic cathedral interior with floor ritual circle
-          (challengex-how-it-works-bg.webp). Fixed layer rendered inside this page
-          only; covers the global crimson-moon background beneath the header. */}
-      <div className="paths-background" aria-hidden />
-
-      <Embers count={18} />
-      <Fog />
+          (ritual-chamber.webp) rendered as a live scene (torches, smoke, embers). Fixed layer
+          rendered inside this page only; covers the global crimson-moon background beneath the header. */}
+      <RealmScene scene="ritual" fixed className="!top-16" scrim="linear-gradient(rgba(5,3,4,0.20), rgba(5,3,4,0.35))" />
 
       <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-14">
         {/* Heading + subtitle: top center */}

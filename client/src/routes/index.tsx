@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
+import { PublicShell } from '@/components/layout/PublicShell';
 import { Spinner } from '@/components/ui/States';
 import { LandingPage } from '@/pages/Landing';
 
@@ -46,9 +47,9 @@ export function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot" element={<Forgot />} />
-        <Route path="/privacy" element={<Legal kind="privacy" />} />
-        <Route path="/terms" element={<Legal kind="terms" />} />
-        <Route path="/share/:slug" element={<Share />} />
+        <Route path="/privacy" element={<PublicShell><Legal kind="privacy" /></PublicShell>} />
+        <Route path="/terms" element={<PublicShell><Legal kind="terms" /></PublicShell>} />
+        <Route path="/share/:slug" element={<PublicShell><Share /></PublicShell>} />
 
         {/* Gate entrance (session required to continue into the app) */}
         <Route

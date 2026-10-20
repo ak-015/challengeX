@@ -22,7 +22,7 @@ export function PathCard({ to, icon: Icon, title, description, index }: PathCard
       animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
       transition={{ delay: 0.9 + index * 0.18, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -6, scale: 1.02 }}
-      className="perspective-[900px]"
+      style={{ transformPerspective: 900 }}
     >
       <Link
         to={to}

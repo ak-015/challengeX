@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Swords, Lightbulb, Map, TrendingUp, ArrowRight } from 'lucide-react';
+import { RealmScene } from '@/components/realm/RealmScene';
 import { useAuth } from '@/hooks/useAuth';
 import { trialsService } from '@/services/trials';
 import { roadmapsService } from '@/services/roadmaps';
 import { Spinner, ErrorState, EmptyState } from '@/components/ui/States';
 import { VerdictBadge } from '@/components/ui/Badge';
 import { errorMessage } from '@/services/api';
-import { assets } from '@/utils/assets';
 import { MODES } from '@/types/api';
 import type { ModeKey } from '@/types/api';
 
@@ -16,7 +16,7 @@ export function DashboardPage() {
 
   const trials = useQuery({
     queryKey: ['trials', 'dashboard'],
-    queryFn: () => trialsService.list({ kind: 'trial', pageSize: 5 }),
+    queryFn: () => trialsService.list({ kind: 'trial', pageSize: 50 }),
     retry: false,
   });
   const roadmaps = useQuery({
@@ -29,6 +29,7 @@ export function DashboardPage() {
   if (trials.error) return <ErrorState message={errorMessage(trials.error)} onRetry={() => trials.refetch()} />;
 
   const items = trials.data?.items ?? [];
+  const recent = items.slice(0, 5);
   const completed = items.filter((i) => i.status === 'complete').length;
   const inProgress = items.filter((i) => i.status === 'in_progress').length;
   const best = items.reduce((m, i) => Math.max(m, i.totalScore ?? 0), 0);
@@ -36,7 +37,7 @@ export function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <section className="relative overflow-hidden rounded-xl border border-[var(--border-subtle)]">
-        <img src={assets.realmSecondary} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-center" />
+        <RealmScene scene="secondary" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-transparent" aria-hidden />
         <div className="relative p-6 sm:p-10">
           <p className="text-xs font-heading uppercase tracking-[0.25em] text-crimson-glow">Sanctum</p>
@@ -76,7 +77,7 @@ export function DashboardPage() {
               All <ArrowRight className="h-3 w-3" aria-hidden />
             </Link>
           </div>
-          {items.length === 0 ? (
+          {recent.length === 0 ? (
             <EmptyState
               title="No trials yet"
               message="Your first verdict awaits. Submit an idea and face the questions."
@@ -84,7 +85,7 @@ export function DashboardPage() {
             />
           ) : (
             <ul className="divide-y divide-[var(--border-subtle)]">
-              {items.map((t) => (
+              {recent.map((t) => (
                 <li key={t.id}>
                   <Link
                     to={t.status === 'complete' ? `/challenge/${t.id}/verdict` : `/challenge/${t.id}/trial`}

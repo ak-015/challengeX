@@ -5,8 +5,7 @@ import { errorMessage } from '@/services/api';
 import { authService } from '@/services/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Form';
-import { assets } from '@/utils/assets';
-import { Embers, Fog } from '@/components/animations/Atmosphere';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 type Stage = 'request' | 'reset';
 
@@ -50,10 +49,8 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-      <img src={assets.realmSecondary} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+      <RealmScene scene="secondary" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/95" aria-hidden />
-      <Embers count={12} />
-      <Fog />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="gothic-panel p-8 shadow-crimson-sm">

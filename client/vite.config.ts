@@ -1,11 +1,53 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon-64.png'],
+      manifest: {
+        name: 'ChallengeX',
+        short_name: 'ChallengeX',
+        description: 'Challenge your idea. Prove it. Build it.',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        background_color: '#0a0405',
+        theme_color: '#0a0405',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // SPA: serve the app shell for navigations, but never for API calls
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        runtimeCaching: [
+          // the big scene art: cache-first after first load
+          { urlPattern: ({ url }) => url.pathname.startsWith('/assets/'), handler: 'CacheFirst',
+            options: { cacheName: 'cx-art', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 } } },
+          { urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+            handler: 'StaleWhileRevalidate', options: { cacheName: 'cx-fonts' } },
+          // API: always the network — never serve a stale session, question or verdict
+          { urlPattern: ({ url }) => url.pathname.startsWith('/api/'), handler: 'NetworkOnly' },
+        ],
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
   resolve: {
     alias: {
-      '@': new URL('./src', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
+      // fileURLToPath (not URL.pathname) so paths containing spaces / Windows drive letters resolve correctly
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -21,10 +63,11 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          anim: ['framer-motion', 'gsap'],
-          data: ['@tanstack/react-query'],
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, '/');
+          if (/\/node_modules\/(react|react-dom|react-router-dom)\//.test(normalizedId)) return 'vendor';
+          if (normalizedId.includes('/node_modules/framer-motion/')) return 'anim';
+          if (normalizedId.includes('/node_modules/@tanstack/react-query/')) return 'data';
         },
       },
     },

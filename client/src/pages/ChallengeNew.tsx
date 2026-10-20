@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords, Zap, Users, Skull, Gauge } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
@@ -23,8 +23,11 @@ const modeIcons: Record<ModeKey, typeof Swords> = {
 
 export function ChallengeNewPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { push } = useToast();
-  const [idea, setIdea] = useState('');
+  // "Challenge This Idea" on the generator page hands its text over via router state.
+  const prefill = (location.state as { idea?: string } | null)?.idea ?? '';
+  const [idea, setIdea] = useState(prefill.slice(0, MAX_IDEA));
   const [mode, setMode] = useState<ModeKey>('stress_test');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

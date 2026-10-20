@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import {
   ShieldAlert, Eye, BarChart3, Map, Swords, ClipboardCheck, Gavel, Route,
 } from 'lucide-react';
-import { assets } from '@/utils/assets';
+import { useAuth } from '@/hooks/useAuth';
 import { Embers, Fog } from '@/components/animations/Atmosphere';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 // Reference design content from the PDF — configurable, NOT live analytics.
 const REFERENCE_STATS = [
@@ -43,6 +44,9 @@ const fadeUp = {
 
 
 export function LandingPage() {
+  const { user } = useAuth();
+  // Signed-in members go straight to the gate; everyone else registers first.
+  const enterTo = user ? '/gate' : '/register';
   return (
     <div className="bg-background">
       {/* Header */}
@@ -54,18 +58,22 @@ export function LandingPage() {
           <nav className="flex items-center gap-2 sm:gap-4">
             <a href="#features" className="hidden sm:block text-xs font-heading uppercase tracking-widest text-parchment-dim hover:text-parchment">Features</a>
             <a href="#how" className="hidden sm:block text-xs font-heading uppercase tracking-widest text-parchment-dim hover:text-parchment">How It Works</a>
-            <Link to="/login" className="text-xs font-heading uppercase tracking-widest text-parchment-dim hover:text-parchment px-3 py-2">Sign In</Link>
-            <Link to="/register" className="gothic-btn-primary text-xs px-4 py-2">Register</Link>
+            {user ? (
+              <Link to="/gate" className="gothic-btn-primary text-xs px-4 py-2">Enter the Realm</Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-xs font-heading uppercase tracking-widest text-parchment-dim hover:text-parchment px-3 py-2">Sign In</Link>
+                <Link to="/register" className="gothic-btn-primary text-xs px-4 py-2">Register</Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <img src={assets.realmBackground} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-top" />
+        <RealmScene scene="background" objectPosition={[0.5, 0]} />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" aria-hidden />
-        <Embers count={20} />
-        <Fog />
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center pt-16">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -90,7 +98,7 @@ export function LandingPage() {
             transition={{ delay: 0.5, duration: 0.9 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/register" className="gothic-btn-primary text-base px-10 py-4 shadow-crimson-md hover:shadow-crimson-lg w-full sm:w-auto">
+            <Link to={enterTo} className="gothic-btn-primary text-base px-10 py-4 shadow-crimson-md hover:shadow-crimson-lg w-full sm:w-auto">
               Enter the Realm
             </Link>
             <a href="#how" className="gothic-btn-ghost text-base px-10 py-4 w-full sm:w-auto">How It Works</a>
@@ -136,7 +144,7 @@ export function LandingPage() {
 
       {/* How It Works */}
       <section id="how" className="relative overflow-hidden border-y border-[var(--border-subtle)]">
-        <img src={assets.ritualChamber} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        <RealmScene scene="ritual" className="opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-6 py-24">
           <motion.div {...fadeUp} className="text-center mb-14">
@@ -158,7 +166,7 @@ export function LandingPage() {
 
       {/* Founder-oriented messaging */}
       <section className="relative overflow-hidden">
-        <img src={assets.realmSecondary} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-30" />
+        <RealmScene scene="secondary" className="opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-6 py-24">
           <motion.div {...fadeUp} className="max-w-xl">
@@ -169,7 +177,7 @@ export function LandingPage() {
             <p className="mt-4 font-narrative text-lg text-parchment-faint leading-relaxed">
               You leave either with hard-won confidence or a faster, cheaper pivot. Both outcomes are victories.
             </p>
-            <Link to="/register" className="gothic-btn-primary mt-8">Claim Your Trial</Link>
+            <Link to={enterTo} className="gothic-btn-primary mt-8">Claim Your Trial</Link>
           </motion.div>
         </div>
       </section>
@@ -196,6 +204,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-dark/20 via-transparent to-transparent" aria-hidden />
         <Embers count={12} />
+        <Fog intensity={0.8} />
         <div className="relative mx-auto max-w-3xl px-6 py-28 text-center">
           <motion.h2 {...fadeUp} className="font-display text-3xl sm:text-5xl text-parchment">
             The Gate Does Not Open for the Unprepared.
@@ -204,7 +213,7 @@ export function LandingPage() {
             Bring your idea. Leave with the truth.
           </motion.p>
           <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.2 }} className="mt-10">
-            <Link to="/register" className="gothic-btn-primary text-base px-12 py-4 shadow-crimson-md hover:shadow-crimson-lg">
+            <Link to={enterTo} className="gothic-btn-primary text-base px-12 py-4 shadow-crimson-md hover:shadow-crimson-lg">
               Enter the Realm
             </Link>
           </motion.div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Play, Eye, Trash2, BookmarkCheck } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/services/api';
@@ -26,10 +26,11 @@ type SortKey = 'updated_desc' | 'updated_asc' | 'score_desc' | 'title_asc';
 export function HistoryPage() {
   const qc = useQueryClient();
   const { push } = useToast();
-  const [params] = useSearchParams();
-  const kindParam = (params.get('kind') as SessionKind | null) ?? 'trial';
-
-  const [kind, setKind] = useState<SessionKind>(kindParam);
+  const [params, setParams] = useSearchParams();
+  const rawKind = params.get('kind');
+  // The URL is the source of truth, so links like /history?kind=ideas work even while already on /history.
+  const kind: SessionKind = rawKind === 'ideas' || rawKind === 'roadmap' ? rawKind : 'trial';
+  const setKind = (k: SessionKind) => setParams(k === 'trial' ? {} : { kind: k }, { replace: true });
   const [status, setStatus] = useState<'' | SessionStatus>('');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('updated_desc');
@@ -39,6 +40,7 @@ export function HistoryPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['trials', kind, savedOnly, page],
     queryFn: () => trialsService.list({ kind, saved: savedOnly || undefined, page, pageSize: 12 }),
+    placeholderData: keepPreviousData,
     retry: false,
   });
 
@@ -82,7 +84,7 @@ export function HistoryPage() {
     return '/history?kind=ideas';
   };
 
-  if (isLoading) return <Spinner label="Summoning your records…" />;
+  if (isLoading && !data) return <Spinner label="Summoning your records…" />;
   if (error) return <ErrorState message={errorMessage(error)} onRetry={() => refetch()} />;
 
 

@@ -6,6 +6,7 @@ import {
   User as UserIcon, Settings, FlaskConical, Bell, Bookmark, Shield,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { RealmScene } from '@/components/realm/RealmScene';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -44,10 +45,10 @@ export function AppShell({ children, showSidebar = false }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Global full-screen dark-fantasy background (Crimson_Moon_Over_Gothic_Cathedral.webp).
-          Fixed + pointer-events-none: stays put while content scrolls, cached once,
+      {/* Global full-screen dark-fantasy background (realm-background.webp) rendered as a live scene
+          (fire, fog, moon, sword — see components/realm). Fixed + pointer-events-none: stays put while content scrolls, cached once,
           identical on every route. Content below uses relative z-10+ to stay above it. */}
-      <div className="app-background" aria-hidden />
+      <RealmScene scene="background" fixed scrim="linear-gradient(rgba(5,3,4,0.28), rgba(5,3,4,0.42))" />
 
       {/* Full-width header on every route */}
       <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-surface/90 backdrop-blur">
