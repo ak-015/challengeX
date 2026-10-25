@@ -3,13 +3,13 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage, ApiError } from '@/services/api';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Form';
-import { RealmScene } from '@/components/realm/RealmScene';
+import { AuthGate } from '@/components/auth/AuthGate';
+import { AuthButton, AuthError, AuthField, AuthLegal, AuthTitle, SocialRow } from '@/components/auth/AuthParts';
+import { LegalPopup } from '@/components/ui/LegalPopup';
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email'),
@@ -24,6 +24,7 @@ export function LoginPage() {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
 
   // Every sign-in passes through the gate unless the user was deep-linked somewhere specific.
   const from = (location.state as { from?: string } | null)?.from ?? '/gate';
@@ -53,57 +54,62 @@ export function LoginPage() {
   if (user) return <Navigate to={from} replace />;
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-      <RealmScene scene="secondary" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/95" aria-hidden />
+    <AuthGate height={712}>
+      <div className="flex min-h-full flex-col justify-between gap-5">
+        <AuthTitle subtitle={<>Enter your credentials<br />to enter the realm</>} />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="gothic-panel p-8 shadow-crimson-sm">
-          <div className="text-center mb-8">
-            <Link to="/" className="font-display text-2xl tracking-widest text-parchment">CHALLENGE<span className="text-crimson-glow">X</span></Link>
-            <p className="mt-2 font-narrative text-parchment-dim italic">Return to the realm.</p>
-          </div>
-
-          <form onSubmit={onSubmit} noValidate className="space-y-5" aria-label="Sign in">
-            {serverError && (
-              <div role="alert" className="rounded-md border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
-                {serverError}
-              </div>
-            )}
-            <Input label="Email" type="email" autoComplete="email" required error={errors.email?.message} {...register('email')} />
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                error={errors.password?.message}
-                {...register('password')}
-              />
+        <form onSubmit={onSubmit} noValidate className="space-y-3.5" aria-label="Sign in">
+          {serverError && <AuthError>{serverError}</AuthError>}
+          <AuthField icon={User} type="email" autoComplete="email" placeholder="Email address" aria-label="Email" error={errors.email?.message} {...register('email')} />
+          <AuthField
+            icon={Lock}
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="Password"
+            aria-label="Password"
+            error={errors.password?.message}
+            trailing={
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-[42px] text-parchment-faint hover:text-parchment"
+                className="text-parchment-faint hover:text-parchment"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </div>
-            <Button type="submit" loading={isSubmitting} className="w-full">Sign In</Button>
-          </form>
-
-          <div className="mt-6 flex items-center justify-between text-xs font-heading text-parchment-dim">
-            <Link to="/forgot" className="hover:text-parchment underline underline-offset-4">Forgot password?</Link>
-            <Link to="/register" className="hover:text-parchment underline underline-offset-4">Create account</Link>
+            }
+            {...register('password')}
+          />
+          <div className="text-right">
+            <Link to="/forgot" className="font-narrative text-[12px] text-crimson-glow hover:text-parchment hover:underline underline-offset-4">
+              Forgot your password?
+            </Link>
           </div>
+          <AuthButton type="submit" loading={isSubmitting}>
+            Enter the realm <ArrowRight className="h-4 w-4" aria-hidden />
+          </AuthButton>
+        </form>
 
-          <div className="mt-6 border-t border-[var(--border-subtle)] pt-4 flex justify-center gap-4 text-xs text-parchment-faint">
-            <Link to="/privacy" className="hover:text-parchment-dim">Privacy</Link>
-            <Link to="/terms" className="hover:text-parchment-dim">Terms</Link>
-            <a href="mailto:support@challengex.app" className="hover:text-parchment-dim">Support</a>
-          </div>
-        </div>
+        <SocialRow verb="SIGN IN" />
+
+        <p className="text-center font-narrative text-[13px] text-parchment-dim">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="text-crimson-glow hover:text-parchment underline-offset-4 hover:underline">
+            Create one now →
+          </Link>
+        </p>
+
+        <AuthLegal
+          onPrivacy={() => setShowLegal('privacy')}
+          onTerms={() => setShowLegal('terms')}
+        />
       </div>
-    </div>
+
+      <LegalPopup
+        isOpen={showLegal === 'privacy' || showLegal === 'terms'}
+        onClose={() => setShowLegal(null)}
+        kind={showLegal ?? 'privacy'}
+      />
+    </AuthGate>
   );
 }

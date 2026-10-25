@@ -25,15 +25,28 @@ const History = lazy(() => import('@/pages/History').then((m) => ({ default: m.H
 const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.ProfilePage })));
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.SettingsPage })));
 const Share = lazy(() => import('@/pages/Share').then((m) => ({ default: m.SharePage })));
-const Legal = lazy(() => import('@/pages/Legal').then((m) => ({ default: m.LegalPage })));
 const Notifications = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.NotificationsPage })));
 const Experiments = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.ExperimentsPage })));
 const Saved = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.SavedPage })));
 
 /** Shell wrapper for authenticated application screens.
  *  `showSidebar` is set per-route in the config below (currently /profile only). */
-function AppPage({ children, showSidebar = false }: { children: React.ReactNode; showSidebar?: boolean }) {
-  return <AppShell showSidebar={showSidebar}>{children}</AppShell>;
+function AppPage({
+  children,
+  showSidebar = false,
+  bare = false,
+  backdrop = 'background',
+}: {
+  children: React.ReactNode;
+  showSidebar?: boolean;
+  bare?: boolean;
+  backdrop?: 'background' | 'ritual';
+}) {
+  return (
+    <AppShell showSidebar={showSidebar} bare={bare} backdrop={backdrop}>
+      {children}
+    </AppShell>
+  );
 }
 
 export function AppRoutes() {
@@ -47,8 +60,7 @@ export function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot" element={<Forgot />} />
-        <Route path="/privacy" element={<PublicShell><Legal kind="privacy" /></PublicShell>} />
-        <Route path="/terms" element={<PublicShell><Legal kind="terms" /></PublicShell>} />
+
         <Route path="/share/:slug" element={<PublicShell><Share /></PublicShell>} />
 
         {/* Gate entrance (session required to continue into the app) */}
@@ -62,7 +74,7 @@ export function AppRoutes() {
         />
 
         {/* Authenticated application */}
-        <Route path="/paths" element={<ProtectedRoute><AppPage><Paths /></AppPage></ProtectedRoute>} />
+        <Route path="/paths" element={<ProtectedRoute><AppPage bare backdrop="ritual"><Paths /></AppPage></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><AppPage><Dashboard /></AppPage></ProtectedRoute>} />
         <Route path="/challenge/new" element={<ProtectedRoute><AppPage><ChallengeNew /></AppPage></ProtectedRoute>} />
         <Route path="/challenge/:id/clarify" element={<ProtectedRoute><AppPage><Clarify /></AppPage></ProtectedRoute>} />

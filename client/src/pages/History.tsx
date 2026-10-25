@@ -89,7 +89,7 @@ export function HistoryPage() {
 
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <header className="mb-8">
         <h1 className="font-display text-3xl sm:text-4xl text-parchment">Previous Trials</h1>
         <p className="mt-2 font-narrative text-lg text-parchment-dim italic">

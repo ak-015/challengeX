@@ -125,7 +125,7 @@ export class RealmEngine {
     this.cfg = cfg;
     this.opts = opts;
     // phase offset so two scenes on one page never pulse in lockstep
-    this.timeOffset = cfg.id === 'background' ? 3.1 : cfg.id === 'secondary' ? 11.7 : 7.3;
+    this.timeOffset = cfg.id === 'background' ? 3.1 : cfg.id === 'secondary' ? 11.7 : cfg.id === 'ritual' ? 7.3 : 5.9;
 
     this.build(assets);
   }
@@ -135,7 +135,7 @@ export class RealmEngine {
     const { cfg } = this;
 
     this.progs = {
-      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker']),
+      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker', 'uFogMask', 'uFogFlow']),
       flame: program(gl, VERT_QUAD, FRAG_FLAME, [...COMMON_U, 'uRect', 'uF', 'uFP']),
       flow: program(gl, VERT_QUAD, FRAG_FLOW, [...COMMON_U, 'uRect', 'uData', 'uRegion', 'uDir', 'uFlow', 'uColor']),
       moon: program(gl, VERT_QUAD, FRAG_MOON, [...COMMON_U, 'uRect', 'uData', 'uArt', 'uM', 'uMP']),
@@ -148,11 +148,15 @@ export class RealmEngine {
     this.textures.push(texture(gl, 0, 0, 0, assets.img, { mip: true }));
     this.textures.push(texture(gl, 1, assets.dw, assets.dh, assets.data, {}));
     this.textures.push(texture(gl, 2, 256, 256, makeNoise(256), { repeat: true }));
+    // unit 3: painted-fog mask (1×1 empty when the scene does not animate its fog)
+    this.textures.push(
+      assets.fog ? texture(gl, 3, assets.dw, assets.dh, assets.fog, {}) : texture(gl, 3, 1, 1, new Uint8Array(4), {}),
+    );
 
     this.emptyVao = gl.createVertexArray()!;
 
     // embers: static attribute buffer, motion is computed in the vertex shader
-    const r = rng(cfg.id === 'background' ? 7 : cfg.id === 'secondary' ? 19 : 31);
+    const r = rng(cfg.id === 'background' ? 7 : cfg.id === 'secondary' ? 19 : cfg.id === 'ritual' ? 31 : 43);
     const attrs: number[] = [];
     for (const e of cfg.embers) {
       for (let i = 0; i < e.count; i++) {
@@ -184,6 +188,11 @@ export class RealmEngine {
     const [px, py] = this.opts.objectPosition;
     this.cover = [s, (W - iw * s) * px, (H - ih * s) * py];
     this.gl.viewport(0, 0, W, H);
+  }
+
+  /** Re-anchor the artwork crop (same as CSS object-position). Call resize() afterwards. */
+  setObjectPosition(p: Vec2) {
+    this.opts.objectPosition = p;
   }
 
   setIntensity(v: number) {
@@ -223,6 +232,8 @@ export class RealmEngine {
       gl.uniform1f(p.u.uHeat, cfg.heat * I);
       gl.uniform1f(p.u.uBloom, cfg.bloom * I);
       gl.uniform1f(p.u.uFlicker, cfg.flicker * Math.min(1, I));
+      gl.uniform1i(p.u.uFogMask, 3);
+      gl.uniform2f(p.u.uFogFlow, cfg.fogFlow ? cfg.fogFlow.amp * Math.min(1, I) : 0, cfg.fogFlow?.speed ?? 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     if (I <= 0) return;
@@ -283,8 +294,8 @@ export class RealmEngine {
       this.common(p, t);
       cfg.flames.forEach((f, i) => {
         gl.uniform4f(p.u.uF, f.x, f.y, f.w, f.h);
-        gl.uniform2f(p.u.uFP, i * 1.37 + 0.5, (f.gain ?? 1) * I);
-        quad([f.x - f.w * 2.2, f.y - f.h * 2.0, f.x + f.w * 2.2, f.y + f.h * 1.3], p);
+        gl.uniform3f(p.u.uFP, i * 1.37 + 0.5, (f.gain ?? 1) * I, f.sharp ? 1 : 0);
+        quad([f.x - f.w * 2.2, f.y - f.h * 2.0, f.x + f.w * 2.2, f.y + (f.sharp ? f.h * 0.15 : f.h * 1.3)], p);
       });
     }
 

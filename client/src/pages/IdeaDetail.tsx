@@ -32,7 +32,7 @@ export function IdeaDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <Link to="/history?kind=ideas" className="inline-flex items-center gap-1.5 text-xs font-heading uppercase tracking-widest text-crimson-glow hover:underline">
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> History
       </Link>

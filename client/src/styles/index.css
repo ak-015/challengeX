@@ -130,3 +130,169 @@ h1, h2, h3, h4 {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ───────── Paths: glowing stone frames + ritual beams ───────── */
+.stone-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* contrast-isolated copy of the frame: dark stone drops to black, red-lit stone/gems stay,
+   screen-blended so only the glowing parts brighten — and they breathe */
+.stone-glow-iso {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  filter: brightness(1.15) contrast(2.3) saturate(1.35);
+  animation: frame-breathe 4.2s ease-in-out infinite;
+}
+@keyframes frame-breathe {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.62; }
+}
+.gem {
+  position: absolute;
+  aspect-ratio: 1 / 1;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255, 240, 232, 0.95) 0%, rgba(255, 96, 84, 0.85) 15%, rgba(229, 9, 32, 0.5) 38%, rgba(229, 9, 32, 0) 68%);
+  animation: gem-pulse 3.4s ease-in-out infinite;
+}
+.gem::after {
+  content: '';
+  position: absolute;
+  inset: -38%;
+  background:
+    linear-gradient(90deg, transparent 28%, rgba(255, 226, 216, 0.9) 50%, transparent 72%) center / 100% 1.5px no-repeat,
+    linear-gradient(0deg, transparent 28%, rgba(255, 226, 216, 0.9) 50%, transparent 72%) center / 1.5px 100% no-repeat;
+  animation: gem-spark 3.4s ease-in-out infinite;
+  animation-duration: inherit;
+  animation-delay: inherit;
+}
+@keyframes gem-pulse {
+  0%, 100% { opacity: 0.32; transform: translate(-50%, -50%) scale(0.8); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.22); }
+}
+@keyframes gem-spark {
+  0%, 100% { opacity: 0; transform: rotate(0deg) scale(0.55); }
+  50% { opacity: 1; transform: rotate(45deg) scale(1); }
+}
+.group:hover .gem,
+.group:focus-visible .gem {
+  animation-duration: 1.5s;
+}
+
+.rb-flow {
+  animation: rb-flow 1.5s linear infinite;
+}
+@keyframes rb-flow {
+  to { stroke-dashoffset: -28; }
+}
+.rb-cone {
+  animation: rb-breathe 3.6s ease-in-out infinite;
+}
+.rb-feed,
+.rb-origin {
+  animation: rb-breathe 2.8s ease-in-out infinite;
+}
+@keyframes rb-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ───────── Gate window (login / register / forgot) ───────── */
+.auth-scroll {
+  scrollbar-width: none;
+}
+.auth-scroll::-webkit-scrollbar {
+  display: none;
+}
+.auth-field {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  height: 46px;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(229, 9, 32, 0.55);
+  border-radius: 6px;
+  background: linear-gradient(#0d0608, #080405);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.75);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-field:focus-within {
+  border-color: #ff3b52;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 59, 82, 0.35), 0 0 16px rgba(229, 9, 32, 0.4);
+}
+.auth-field.is-error {
+  border-color: #f87171;
+}
+.auth-input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  color: #ece3d6;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13.5px;
+  outline: none;
+}
+.auth-input::placeholder {
+  color: rgba(236, 227, 214, 0.38);
+}
+.auth-input:-webkit-autofill {
+  -webkit-text-fill-color: #ece3d6;
+  box-shadow: 0 0 0 40px #0b0507 inset;
+}
+.auth-cta {
+  display: flex;
+  width: 100%;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid rgba(255, 110, 126, 0.65);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ff2f48 0%, #c4061f 55%, #8d0016 100%);
+  color: #fff4ee;
+  font-family: 'Cinzel', serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 22px rgba(229, 9, 32, 0.45);
+  transition: filter 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.auth-cta:hover:not(:disabled) {
+  filter: brightness(1.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 32px rgba(255, 40, 60, 0.65);
+}
+.auth-cta:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.auth-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.auth-social {
+  display: flex;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(229, 9, 32, 0.35);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ece3d6;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: border-color 0.2s, background 0.2s;
+}
+.auth-social:hover {
+  border-color: rgba(255, 59, 82, 0.7);
+  background: rgba(229, 9, 32, 0.12);
+}

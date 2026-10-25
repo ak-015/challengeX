@@ -1,11 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import {
   ShieldAlert, Eye, BarChart3, Map, Swords, ClipboardCheck, Gavel, Route,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Embers, Fog } from '@/components/animations/Atmosphere';
 import { RealmScene } from '@/components/realm/RealmScene';
+import { LegalPopup } from '@/components/ui/LegalPopup';
 
 // Reference design content from the PDF — configurable, NOT live analytics.
 const REFERENCE_STATS = [
@@ -44,8 +46,11 @@ const fadeUp = {
 
 
 export function LandingPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
+
   // Signed-in members go straight to the gate; everyone else registers first.
+  if (!loading && user) return <Navigate to="/gate" replace />;
   const enterTo = user ? '/gate' : '/register';
   return (
     <div className="bg-background">
@@ -245,8 +250,24 @@ export function LandingPage() {
           <div>
             <h4 className="font-heading text-sm uppercase tracking-widest text-parchment">Legal &amp; Support</h4>
             <ul className="mt-3 space-y-2 text-sm text-parchment-dim">
-              <li><Link to="/privacy" className="hover:text-parchment">Privacy</Link></li>
-              <li><Link to="/terms" className="hover:text-parchment">Terms</Link></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowLegal('privacy')}
+                  className="hover:text-parchment"
+                >
+                  Privacy
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowLegal('terms')}
+                  className="hover:text-parchment"
+                >
+                  Terms
+                </button>
+              </li>
               <li><a href="mailto:support@challengex.app" className="hover:text-parchment">Support</a></li>
             </ul>
           </div>
@@ -255,6 +276,12 @@ export function LandingPage() {
           © {new Date().getFullYear()} ChallengeX. All rights reserved.
         </div>
       </footer>
+
+      <LegalPopup
+        isOpen={showLegal === 'privacy' || showLegal === 'terms'}
+        onClose={() => setShowLegal(null)}
+        kind={showLegal ?? 'privacy'}
+      />
     </div>
   );
 }

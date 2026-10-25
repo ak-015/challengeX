@@ -35,7 +35,7 @@ export function DashboardPage() {
   const best = items.reduce((m, i) => Math.max(m, i.totalScore ?? 0), 0);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="w-full space-y-8">
       <section className="relative overflow-hidden rounded-xl border border-[var(--border-subtle)]">
         <RealmScene scene="secondary" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-transparent" aria-hidden />

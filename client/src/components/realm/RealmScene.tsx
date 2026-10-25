@@ -7,7 +7,7 @@ import { SCENES } from './scenes';
 import type { SceneConfig } from './scenes';
 
 export interface RealmSceneProps {
-  /** which artwork: `background` (statue + braziers), `secondary` (knight + castle) or `ritual` (torch hall) */
+  /** which artwork: `background` (statue + braziers), `secondary` (knight + castle), `ritual` (torch hall) or `gate` (the realm gate) */
   scene: SceneConfig['id'];
   /** pin to the viewport instead of the nearest positioned ancestor */
   fixed?: boolean;
@@ -65,6 +65,14 @@ export function RealmScene({
   const [fallback, setFallback] = useState(false);
   const px = objectPosition[0];
   const py = objectPosition[1];
+  // The crop position may change on every resize (e.g. the login panel keeps the gate door
+  // centred). Track it in a ref so the GPU context is NOT rebuilt when only the position moves.
+  const posRef = useRef<[number, number]>([px, py]);
+  posRef.current = [px, py];
+  const apiRef = useRef<{ refresh: () => void } | null>(null);
+  useEffect(() => {
+    apiRef.current?.refresh();
+  }, [px, py]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -143,7 +151,7 @@ export function RealmScene({
           img.after(c);
           try {
             canvas = c;
-            engine = new RealmEngine(c, cfg, assets, { objectPosition: [px, py], intensity });
+            engine = new RealmEngine(c, cfg, assets, { objectPosition: [...posRef.current], intensity });
           } catch (err) {
             if (import.meta.env.DEV) console.warn('[RealmScene] falling back to static art:', err);
             c.remove();
@@ -183,6 +191,13 @@ export function RealmScene({
         });
     };
 
+    apiRef.current = {
+      refresh: () => {
+        if (!engine) return;
+        engine.setObjectPosition([...posRef.current]);
+        applySize();
+      },
+    };
     const ro = new ResizeObserver(applySize);
     ro.observe(host);
     // create the GL context only while on / near screen; release it when scrolled away
@@ -200,9 +215,10 @@ export function RealmScene({
       disposed = true;
       ro.disconnect();
       io.disconnect();
+      apiRef.current = null;
       stop();
     };
-  }, [cfg, px, py, intensity]);
+  }, [cfg, intensity]);
 
   const pos = `${px * 100}% ${py * 100}%`;
 

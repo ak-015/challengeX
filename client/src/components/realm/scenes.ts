@@ -19,6 +19,8 @@ export interface FlameSpec {
   w: number;
   h: number;
   gain?: number;
+  /** flame stops dead at its base (use for fire burning out of a bowl so it never overlaps the bowl) */
+  sharp?: boolean;
 }
 
 export interface SwordSpec {
@@ -77,7 +79,7 @@ export interface EmberSpec {
 }
 
 export interface SceneConfig {
-  id: 'background' | 'secondary' | 'ritual';
+  id: 'background' | 'secondary' | 'ritual' | 'gate';
   image: string;
   size: Vec2;
   /** colour thresholds used to find fire/lava pixels (0-255 channel values) */
@@ -93,6 +95,8 @@ export interface SceneConfig {
   swords: SwordSpec[];
   flows: FlowSpec[];
   fog: FogLayer[];
+  /** animate the PAINTED fog in the artwork (drift + billow) instead of adding smoke on top */
+  fogFlow?: { amp: number; speed: number };
   embers: EmberSpec[];
 }
 
@@ -187,12 +191,9 @@ export const SECONDARY_SCENE: SceneConfig = {
     { rect: [0, 700, 1000, 941], dir: [10, -6], scale: 44, gain: 1.1, contrast: 1.4, color: [1, 0.42, 0.1] },
     { rect: [1100, 520, 1672, 900], dir: [22, 10], scale: 50, gain: 0.9, contrast: 1.4, color: [1, 0.42, 0.1] },
   ],
-  fog: [
-    // the cloud sea between the peaks — three layers drifting at different speeds
-    { y0: 430, y1: 760, soft: 140, speed: 14, scale: 380, density: 0.6, tint: [0.97, 0.9, 0.9], seed: 2.2 },
-    { y0: 520, y1: 900, soft: 160, speed: -22, scale: 540, density: 0.55, tint: [0.94, 0.85, 0.86], seed: 7.4 },
-    { y0: 300, y1: 560, soft: 120, speed: 8, scale: 440, density: 0.4, tint: [0.9, 0.78, 0.8], seed: 11.9 },
-  ],
+  // no added smoke: the painting already has a cloud sea — it is animated in place
+  fog: [],
+  fogFlow: { amp: 42, speed: 0.06 },
   embers: [
     { x: 1150, y: 330, spread: 230, rise: 150, count: 24, size: 4.4 }, // burning castle
     { x: 1000, y: 380, spread: 40, rise: 120, count: 8, size: 3.6 },
@@ -215,31 +216,69 @@ export const RITUAL_SCENE: SceneConfig = {
   bloom: 0.4,
   flicker: 1,
   flames: [
-    // the hall is mirrored: big sconces, tall braziers, low bowls, tiny floor candles
-    { x: 80, y: 302, w: 52, h: 66, gain: 1.05 },
-    { x: 1592, y: 304, w: 52, h: 66, gain: 1.05 },
-    { x: 378, y: 392, w: 40, h: 48 },
-    { x: 1294, y: 397, w: 40, h: 48 },
-    { x: 139, y: 542, w: 28, h: 36, gain: 0.9 },
-    { x: 1533, y: 542, w: 28, h: 36, gain: 0.9 },
-    { x: 253, y: 546, w: 18, h: 22, gain: 0.8 },
-    { x: 1419, y: 546, w: 18, h: 22, gain: 0.8 },
+    // y = the RIM of each bowl, so fire burns out of the bowl instead of over it
+    { x: 80, y: 289, w: 50, h: 64, gain: 1.05, sharp: true },
+    { x: 1592, y: 291, w: 50, h: 64, gain: 1.05, sharp: true },
+    { x: 378, y: 380, w: 38, h: 46, sharp: true },
+    { x: 1294, y: 384, w: 38, h: 46, sharp: true },
+    { x: 139, y: 531, w: 26, h: 34, gain: 0.9, sharp: true },
+    { x: 1533, y: 531, w: 26, h: 34, gain: 0.9, sharp: true },
+    { x: 253, y: 535, w: 17, h: 21, gain: 0.8, sharp: true },
+    { x: 1419, y: 535, w: 17, h: 21, gain: 0.8, sharp: true },
   ],
   moon: null,
   swords: [],
   flows: [],
   fog: [
-    { y0: 500, y1: 900, soft: 130, speed: 14, scale: 340, density: 0.6, tint: [0.96, 0.84, 0.84], seed: 3.1 },
-    { y0: 560, y1: 941, soft: 150, speed: -20, scale: 500, density: 0.5, tint: [0.92, 0.78, 0.8], seed: 8.3 },
+    { y0: 500, y1: 900, soft: 130, speed: 14, scale: 340, density: 0.4, tint: [0.96, 0.84, 0.84], seed: 3.1 },
+    { y0: 560, y1: 941, soft: 150, speed: -20, scale: 500, density: 0.32, tint: [0.92, 0.78, 0.8], seed: 8.3 },
   ],
   embers: [
-    { x: 80, y: 296, spread: 34, rise: 240, count: 12, size: 4.4 },
-    { x: 1592, y: 298, spread: 34, rise: 240, count: 12, size: 4.4 },
-    { x: 378, y: 386, spread: 26, rise: 190, count: 8, size: 4 },
-    { x: 1294, y: 391, spread: 26, rise: 190, count: 8, size: 4 },
-    { x: 139, y: 536, spread: 20, rise: 120, count: 5, size: 3.6 },
-    { x: 1533, y: 536, spread: 20, rise: 120, count: 5, size: 3.6 },
+    { x: 80, y: 284, spread: 30, rise: 240, count: 12, size: 4.4 },
+    { x: 1592, y: 286, spread: 30, rise: 240, count: 12, size: 4.4 },
+    { x: 378, y: 374, spread: 22, rise: 190, count: 8, size: 4 },
+    { x: 1294, y: 378, spread: 22, rise: 190, count: 8, size: 4 },
+    { x: 139, y: 526, spread: 16, rise: 120, count: 5, size: 3.6 },
+    { x: 1533, y: 526, spread: 16, rise: 120, count: 5, size: 3.6 },
     { x: 836, y: 700, spread: 460, rise: 100, count: 22, size: 3.2 }, // sparks off the ritual circle
+  ],
+};
+
+/* ──────────────────────────────────────────────────────────────────────────
+   gate-closed — the realm gate: dragon, twin guards with glowing swords, braziers
+   (login / register / forgot backdrop)
+   ────────────────────────────────────────────────────────────────────────── */
+export const GATE_SCENE: SceneConfig = {
+  id: 'gate',
+  image: assets.gateClosed,
+  size: [1672, 941],
+  hot: { gb: [18, 78], r: [110, 210] },
+  sky: [70, 135],
+  heat: 2.8,
+  bloom: 0.5,
+  flicker: 1,
+  flames: [
+    // y = rim of each bowl
+    { x: 75, y: 690, w: 64, h: 66, gain: 1.05, sharp: true },
+    { x: 281, y: 743, w: 54, h: 60, sharp: true },
+    { x: 1491, y: 744, w: 54, h: 60, sharp: true },
+    { x: 1660, y: 692, w: 64, h: 66, gain: 1.05, sharp: true },
+  ],
+  moon: { x: 1453, y: 172, r: 145, gain: 1, surface: 0.8, corona: 0.95 },
+  swords: [
+    { from: [505, 536], to: [506, 738], w0: 14, w1: 2.2, color: [1, 0.14, 0.12], gain: 1 },
+    { from: [1256, 532], to: [1256, 738], w0: 14, w1: 2.2, color: [1, 0.14, 0.12], gain: 1 },
+  ],
+  flows: [],
+  fog: [], // the painting already carries its own mist — animated in place below
+  fogFlow: { amp: 34, speed: 0.06 },
+  embers: [
+    { x: 75, y: 684, spread: 30, rise: 210, count: 10, size: 4.4 },
+    { x: 281, y: 737, spread: 26, rise: 190, count: 8, size: 4 },
+    { x: 1491, y: 738, spread: 26, rise: 190, count: 8, size: 4 },
+    { x: 1660, y: 686, spread: 30, rise: 210, count: 10, size: 4.4 },
+    { x: 505, y: 640, spread: 24, rise: 170, count: 8, size: 3.4 },
+    { x: 1256, y: 640, spread: 24, rise: 170, count: 8, size: 3.4 },
   ],
 };
 
@@ -247,4 +286,5 @@ export const SCENES: Record<SceneConfig['id'], SceneConfig> = {
   background: BACKGROUND_SCENE,
   secondary: SECONDARY_SCENE,
   ritual: RITUAL_SCENE,
+  gate: GATE_SCENE,
 };

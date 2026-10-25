@@ -93,7 +93,7 @@ export function RoadmapDetailPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="w-full">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-heading uppercase tracking-[0.25em] text-crimson-glow">Roadmap</p>

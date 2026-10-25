@@ -16,6 +16,8 @@ import type { SceneConfig } from './scenes';
 export interface SceneAssets {
   img: HTMLImageElement;
   data: Uint8Array;
+  /** painted-fog mask (r channel, interior of pale desaturated clouds) — only built when the scene animates its painted fog */
+  fog: Uint8Array | null;
   dw: number;
   dh: number;
 }
@@ -63,7 +65,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; dw: number; dh: number } {
+function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; fog: Uint8Array | null; dw: number; dh: number } {
   const dw = Math.round(img.naturalWidth / 2);
   const dh = Math.round(img.naturalHeight / 2);
   const c = document.createElement('canvas');
@@ -78,6 +80,7 @@ function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; dw
   const hot = new Float32Array(n);
   const sky = new Float32Array(n);
   const lum = new Float32Array(n);
+  const fogRaw = cfg.fogFlow ? new Float32Array(n) : null;
   const [gb0, gb1] = cfg.hot.gb;
   const [hr0, hr1] = cfg.hot.r;
   const [s0, s1] = cfg.sky;
@@ -88,6 +91,12 @@ function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; dw
     hot[i] = ss(gb0, gb1, G - B) * ss(hr0, hr1, R);
     sky[i] = ss(s0, s1, R);
     lum[i] = (0.2126 * R + 0.7152 * G + 0.0722 * B) / 255;
+    if (fogRaw) {
+      // painted fog = pale, desaturated, fairly bright (pinkish grey); sky, lava and rock are not
+      const mx = Math.max(R, G, B);
+      const sat = mx > 0 ? (mx - Math.min(R, G, B)) / mx : 0;
+      fogRaw[i] = ss(80, 140, lum[i] * 255) * (1 - ss(0.3, 0.46, sat));
+    }
   }
 
   const skySoft = boxBlur(sky, dw, dh, 1, 1);
@@ -107,6 +116,16 @@ function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; dw
     }
   }
 
+  // fog mask: only the INTERIOR of fog banks (so rock silhouettes next to fog never move)
+  let fog: Uint8Array | null = null;
+  if (fogRaw) {
+    const inner = boxBlur(fogRaw, dw, dh, 6, 2);
+    for (let i = 0; i < n; i++) inner[i] = ss(0.55, 0.92, inner[i]);
+    const soft = boxBlur(inner, dw, dh, 3, 1);
+    fog = new Uint8Array(n * 4);
+    for (let i = 0; i < n; i++) fog[i * 4] = Math.round(Math.min(1, soft[i]) * 255);
+  }
+
   const data = new Uint8Array(n * 4);
   for (let i = 0; i < n; i++) {
     data[i * 4] = Math.round(Math.min(1, hot[i]) * 255);
@@ -114,7 +133,7 @@ function derive(img: HTMLImageElement, cfg: SceneConfig): { data: Uint8Array; dw
     data[i * 4 + 2] = Math.round(Math.min(1, hotBlur[i] * 3.4) * 255);
     data[i * 4 + 3] = Math.round(Math.min(1, (lumBlur[i] * 255) / p99) * 255);
   }
-  return { data, dw, dh };
+  return { data, fog, dw, dh };
 }
 
 const cache = new Map<string, Promise<SceneAssets>>();

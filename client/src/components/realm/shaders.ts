@@ -73,6 +73,8 @@ uniform sampler2D uData; // r: fire/lava mask  g: sky visibility  b: blurred fir
 uniform float uHeat;
 uniform float uBloom;
 uniform float uFlicker;
+uniform sampler2D uFogMask; // r: interior of painted fog banks
+uniform vec2 uFogFlow;      // amplitude (art px), cycles per second (0 = off)
 out vec4 o;
 void main(){
   vec2 q = imgPosFrag();
@@ -86,6 +88,27 @@ void main(){
 
   vec3 art = texture(uArt, uv2).rgb;
   vec4 d = texture(uData, uv2);
+
+  // ── painted fog: drift + billow in place (flow-map: two phase-shifted samples cross-faded,
+  //    displacement scaled by the fog mask so rocks and silhouettes never move)
+  float fm = uFogFlow.x > 0.0 ? texture(uFogMask, uv).r : 0.0;
+  if (fm > 0.01) {
+    vec2 wind = vec2(1.0, 0.0) + (vec2(nz(q / 240.0 + vec2(0.0, uTime * 0.02), 0), nz(q / 240.0 + vec2(7.1, uTime * 0.016), 1)) - 0.5) * 1.2;
+    float ph1 = fract(uTime * uFogFlow.y + nz(q / 420.0, 2) * 0.9);   // spatial phase offset: no global pulse
+    float ph2 = fract(ph1 + 0.5);
+    float w1 = 1.0 - abs(2.0 * ph1 - 1.0);
+    vec3 f1 = texture(uArt, (q - wind * (ph1 - 0.5) * uFogFlow.x * fm) / uImg).rgb;
+    vec3 f2 = texture(uArt, (q - wind * (ph2 - 0.5) * uFogFlow.x * fm) / uImg).rgb;
+    // slow billow: gentle warp on top of the drift
+    vec2 bw = (vec2(nz(q / 150.0 + vec2(-uTime * 0.05, 0.0), 3), nz(q / 150.0 + vec2(3.3, uTime * 0.04), 0)) - 0.5) * 7.0 * fm;
+    vec3 fa = mix(f2, f1, w1);
+    vec3 fb = texture(uArt, (q + bw) / uImg).rgb;
+    vec3 fogArt = mix(fa, fb, 0.35);
+    // density waves rolling through the bank
+    float dn = nz(q / 210.0 + vec2(-uTime * 0.035, uTime * 0.012), 2);
+    fogArt *= 0.9 + 0.22 * dn;
+    art = mix(art, fogArt, smoothstep(0.02, 0.5, fm));
+  }
 
   float f1 = nz(q / 30.0 * vec2(1.0, 0.75) + vec2(0.0, -uTime * 1.2), 2);
   float f2 = nz(q / 13.0 * vec2(1.0, 0.8) + vec2(5.0, -uTime * 2.3), 3);
@@ -103,7 +126,7 @@ void main(){
 /* ───────────────────────────── procedural flame ───────────────────────────── */
 export const FRAG_FLAME = HEAD + COMMON + `
 uniform vec4 uF;   // cx, base y, width, height   (artwork px)
-uniform vec2 uFP;  // seed, gain
+uniform vec3 uFP;  // seed, gain, sharp (1 = flame stops dead at the bowl rim)
 in vec2 vImg;
 out vec4 o;
 void main(){
@@ -127,13 +150,15 @@ void main(){
 
   float h = body * (1.25 - py * 0.62) - (1.0 - erode) * (0.20 + py * 0.62);
   h = clamp(h * 1.55, 0.0, 1.0) * breathe;
-  h *= smoothstep(-0.10, 0.10, p.y);
+  float rimLo = mix(-0.10, -0.015, uFP.z);
+  float rimHi = mix(0.10, 0.05, uFP.z);
+  h *= smoothstep(rimLo, rimHi, p.y);
 
   vec3 col = fireRamp(h) * smoothstep(0.03, 0.22, h);
 
   // flickering light thrown onto the surroundings
   vec2 g = vec2(p.x * 0.5, (p.y - 0.28) * 0.72);
-  float pool = exp(-dot(g, g) * 2.6) * breathe * smoothstep(-1.1, 0.05, p.y);
+  float pool = exp(-dot(g, g) * 2.6) * breathe * smoothstep(mix(-1.1, -0.10, uFP.z), mix(0.05, 0.02, uFP.z), p.y);
   pool *= smoothstep(4.2, 2.4, abs(p.x));
   col += vec3(1.0, 0.36, 0.07) * pool * 0.34;
 

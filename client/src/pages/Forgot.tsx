@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { KeyRound, Lock, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/services/api';
 import { authService } from '@/services/auth';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Form';
-import { RealmScene } from '@/components/realm/RealmScene';
+import { AuthGate } from '@/components/auth/AuthGate';
+import { AuthButton, AuthError, AuthField, AuthLegal, AuthTitle } from '@/components/auth/AuthParts';
 
 type Stage = 'request' | 'reset';
 
@@ -48,68 +48,54 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-      <RealmScene scene="secondary" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/95" aria-hidden />
+    <AuthGate height={600}>
+      <div className="flex min-h-full flex-col justify-between gap-5">
+        <AuthTitle subtitle={<>Reclaim your<br />passage to the realm</>} />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="gothic-panel p-8 shadow-crimson-sm">
-          <div className="text-center mb-8">
-            <Link to="/" className="font-display text-2xl tracking-widest text-parchment">CHALLENGE<span className="text-crimson-glow">X</span></Link>
-            <p className="mt-2 font-narrative text-parchment-dim italic">Reclaim your passage.</p>
-          </div>
-
-          {error && (
-            <div role="alert" className="mb-5 rounded-md border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
-              {error}
-            </div>
-          )}
-
+        <div className="space-y-3.5">
+          {error && <AuthError>{error}</AuthError>}
           {stage === 'request' ? (
-            <div className="space-y-5">
-              <Input
-                label="Email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button onClick={request} loading={busy} disabled={!email} className="w-full">
-                Send Reset Code
-              </Button>
-            </div>
+            <>
+              <AuthField icon={Mail} type="email" autoComplete="email" placeholder="Email address" aria-label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <AuthButton onClick={request} loading={busy} disabled={!email}>
+                Send reset code
+              </AuthButton>
+            </>
           ) : (
-            <div className="space-y-5">
-              <Input
-                label="Verification Code"
+            <>
+              <AuthField
+                icon={KeyRound}
                 inputMode="numeric"
-                required
-                hint="6 digits sent to your email"
+                placeholder="6-digit code from your email"
+                aria-label="Verification code"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               />
-              <Input
-                label="New Password"
+              <AuthField
+                icon={Lock}
                 type="password"
                 autoComplete="new-password"
-                required
-                hint="At least 8 characters"
+                placeholder="New password (8+ characters)"
+                aria-label="New password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-              <Button onClick={reset} loading={busy} disabled={code.length !== 6 || newPassword.length < 8} className="w-full">
-                Reset Password
-              </Button>
-            </div>
+              <AuthButton onClick={reset} loading={busy} disabled={code.length !== 6 || newPassword.length < 8}>
+                Reset password
+              </AuthButton>
+            </>
           )}
-
-          <p className="mt-6 text-center text-sm text-parchment-dim">
-            Remembered it?{' '}
-            <Link to="/login" className="text-crimson-glow underline underline-offset-4">Sign in</Link>
-          </p>
         </div>
+
+        <p className="text-center font-narrative text-[13px] text-parchment-dim">
+          Remembered it?{' '}
+          <Link to="/login" className="text-crimson-glow hover:text-parchment underline-offset-4 hover:underline">
+            Return to the gate →
+          </Link>
+        </p>
+
+        <AuthLegal />
       </div>
-    </div>
+    </AuthGate>
   );
 }
