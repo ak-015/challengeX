@@ -54,7 +54,10 @@ function program(gl: WebGL2RenderingContext, vs: string, fs: string, names: stri
     throw new Error(`realm: program link error\n${gl.getProgramInfoLog(p)}`);
   }
   const u: Prog['u'] = {};
-  for (const n of names) u[n] = gl.getUniformLocation(p, n);
+  for (const n of names) {
+    const key = n.endsWith('[0]') ? n.slice(0, -3) : n;
+    u[key] = gl.getUniformLocation(p, n);
+  }
   return { p, u };
 }
 
@@ -135,13 +138,13 @@ export class RealmEngine {
     const { cfg } = this;
 
     this.progs = {
-      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker', 'uFogMask', 'uFogFlow', 'uWN', 'uWF', 'uWP']),
+      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker', 'uFogMask', 'uFogFlow', 'uWN', 'uWF[0]', 'uWP[0]']),
       spray: program(gl, VERT_QUAD, FRAG_SPRAY, [...COMMON_U, 'uRect', 'uSp', 'uSpG']),
       flame: program(gl, VERT_QUAD, FRAG_FLAME, [...COMMON_U, 'uRect', 'uF', 'uFP']),
       flow: program(gl, VERT_QUAD, FRAG_FLOW, [...COMMON_U, 'uRect', 'uData', 'uRegion', 'uDir', 'uFlow', 'uColor']),
       moon: program(gl, VERT_QUAD, FRAG_MOON, [...COMMON_U, 'uRect', 'uData', 'uArt', 'uM', 'uMP']),
       sword: program(gl, VERT_QUAD, FRAG_SWORD, [...COMMON_U, 'uRect', 'uS', 'uSW', 'uSC']),
-      fog: program(gl, VERT_FULL, FRAG_FOG, [...COMMON_U, 'uData', 'uFN', 'uFA', 'uFB', 'uFC', 'uFogGain']),
+      fog: program(gl, VERT_FULL, FRAG_FOG, [...COMMON_U, 'uData', 'uFN', 'uFA[0]', 'uFB[0]', 'uFC[0]', 'uFogGain']),
       ember: program(gl, VERT_EMBER, FRAG_EMBER, ['uRes', 'uCover', 'uTime', 'uPx']),
     };
 
