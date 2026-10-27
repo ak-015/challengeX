@@ -26,8 +26,8 @@ export function PathCard({ to, icon: Icon, title, description, index, fontSize =
       className="h-full w-full"
       initial={{ opacity: 0, y: 80, rotateX: -25, scale: 0.85 }}
       animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-      transition={{ delay: index * 0.06, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.15, ease: 'easeOut' } }}
+      transition={{ delay: 0.1 + index * 0.18, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -6, scale: 1.02 }}
       style={{ transformPerspective: 900, fontSize }}
     >
       <Link

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PublicShell } from '@/components/layout/PublicShell';
 import { Spinner } from '@/components/ui/States';
 import { LandingPage } from '@/pages/Landing';
+import { useAuth } from '@/hooks/useAuth';
 
 // Route-level code splitting for heavier screens.
 const Login = lazy(() => import('@/pages/Login').then((m) => ({ default: m.LoginPage })));
@@ -25,9 +26,11 @@ const History = lazy(() => import('@/pages/History').then((m) => ({ default: m.H
 const Profile = lazy(() => import('@/pages/Profile').then((m) => ({ default: m.ProfilePage })));
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.SettingsPage })));
 const Share = lazy(() => import('@/pages/Share').then((m) => ({ default: m.SharePage })));
-const Notifications = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.NotificationsPage })));
+const Legal = lazy(() => import('@/pages/Legal').then((m) => ({ default: m.LegalPage })));
 const Experiments = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.ExperimentsPage })));
 const Saved = lazy(() => import('@/pages/Secondary').then((m) => ({ default: m.SavedPage })));
+const IdeaDetail = lazy(() => import('@/pages/IdeaDetail').then((m) => ({ default: m.IdeaDetailPage })));
+const OAuthCallback = lazy(() => import('@/pages/OAuthCallback').then((m) => ({ default: m.OAuthCallbackPage })));
 
 /** Shell wrapper for authenticated application screens.
  *  `showSidebar` is set per-route in the config below (currently /profile only). */
@@ -49,6 +52,14 @@ function AppPage({
   );
 }
 
+function HomeRoute() {
+  const { user, token, loading } = useAuth();
+
+  if (token && loading) return <Spinner label="Restoring your session…" />;
+  if (user) return <Navigate to="/gate" replace />;
+  return <LandingPage />;
+}
+
 export function AppRoutes() {
   const location = useLocation();
 
@@ -56,12 +67,14 @@ export function AppRoutes() {
     <Suspense fallback={<Spinner />}>
       <Routes location={location}>
         {/* Public */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot" element={<Forgot />} />
-
+        <Route path="/privacy" element={<PublicShell><Legal kind="privacy" /></PublicShell>} />
+        <Route path="/terms" element={<PublicShell><Legal kind="terms" /></PublicShell>} />
         <Route path="/share/:slug" element={<PublicShell><Share /></PublicShell>} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* Gate entrance (session required to continue into the app) */}
         <Route
@@ -81,13 +94,13 @@ export function AppRoutes() {
         <Route path="/challenge/:id/trial" element={<ProtectedRoute><AppPage><Trial /></AppPage></ProtectedRoute>} />
         <Route path="/challenge/:id/verdict" element={<ProtectedRoute><AppPage><Verdict /></AppPage></ProtectedRoute>} />
         <Route path="/ideas/generate" element={<ProtectedRoute><AppPage><IdeasGenerate /></AppPage></ProtectedRoute>} />
+        <Route path="/ideas/:id" element={<ProtectedRoute><AppPage><IdeaDetail /></AppPage></ProtectedRoute>} />
         <Route path="/roadmaps/new" element={<ProtectedRoute><AppPage><RoadmapNew /></AppPage></ProtectedRoute>} />
         <Route path="/roadmaps" element={<ProtectedRoute><AppPage><Roadmaps /></AppPage></ProtectedRoute>} />
         <Route path="/roadmaps/:id" element={<ProtectedRoute><AppPage><RoadmapDetail /></AppPage></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><AppPage><History /></AppPage></ProtectedRoute>} />
         <Route path="/saved" element={<ProtectedRoute><AppPage><Saved /></AppPage></ProtectedRoute>} />
         <Route path="/experiments" element={<ProtectedRoute><AppPage><Experiments /></AppPage></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><AppPage><Notifications /></AppPage></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><AppPage showSidebar><Profile /></AppPage></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AppPage><Settings /></AppPage></ProtectedRoute>} />
 

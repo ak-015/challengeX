@@ -8,13 +8,17 @@ import { recordAiEvent } from './aiEvents';
 import type { ModelPool } from './modelPool';
 import { nimChat } from './nimClient';
 
-export interface GenerateOptions {
+interface GenerateOptions {
   system: string;
   user: string;
   pool: ModelPool;
   route: string;
   maxTokens?: number;
   temperature?: number;
+  /** Per HTTP call (default 25 s). */
+  timeoutMs?: number;
+  /** Total time the pool may spend on one pass across models (default 45 s). */
+  budgetMs?: number;
 }
 
 type Parsed<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -82,8 +86,9 @@ async function generateOnce<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, opts
           ],
           maxTokens,
           temperature,
+          timeoutMs: opts.timeoutMs,
         }),
-      { route: opts.route, avoid, maxAttempts: MAX_ATTEMPTS_PER_PASS },
+      { route: opts.route, avoid, maxAttempts: MAX_ATTEMPTS_PER_PASS, budgetMs: opts.budgetMs },
     );
     return { model, parsed: parse(schema, value) };
   };

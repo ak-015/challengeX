@@ -1,29 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Bell, FlaskConical, Bookmark } from 'lucide-react';
+import { FlaskConical, Bookmark } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { trialsService } from '@/services/trials';
 import { EmptyState } from '@/components/ui/States';
 import { VerdictBadge } from '@/components/ui/Badge';
-
-/** The backend has no notifications API — this screen states that honestly. */
-export function NotificationsPage() {
-  return (
-    <div className="mx-auto max-w-3xl">
-      <header className="mb-8">
-        <h1 className="font-display text-3xl sm:text-4xl text-parchment flex items-center gap-3">
-          <Bell className="h-7 w-7 text-crimson-glow" aria-hidden /> Notifications
-        </h1>
-      </header>
-      <div className="gothic-panel">
-        <EmptyState
-          title="No notifications API available"
-          message="The existing backend does not expose a notifications endpoint, so none are shown here. This screen will light up once that capability exists — see docs/backend-capability-report.md."
-          action={<Link to="/dashboard" className="gothic-btn-ghost text-sm">Back to Dashboard</Link>}
-        />
-      </div>
-    </div>
-  );
-}
 
 /** Experiments are embedded in verdict payloads (validationExperiment), not a standalone API. */
 export function ExperimentsPage() {

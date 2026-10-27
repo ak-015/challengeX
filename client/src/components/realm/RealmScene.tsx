@@ -6,7 +6,7 @@ import { loadSceneAssets } from './masks';
 import { SCENES } from './scenes';
 import type { SceneConfig } from './scenes';
 
-export interface RealmSceneProps {
+interface RealmSceneProps {
   /** which artwork: `background` (statue + braziers), `secondary` (knight + castle), `ritual` (torch hall) or `gate` (the realm gate) */
   scene: SceneConfig['id'];
   /** pin to the viewport instead of the nearest positioned ancestor */

@@ -46,4 +46,3 @@ export function Fog({ className = '', intensity = 1 }: { className?: string; int
   return <Smoke className={className} intensity={intensity} />;
 }
 
-export { Smoke };

@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, Eye, EyeOff, KeyRound, Lock, Mail, User } from 'lucide-react';
+import { ArrowRight, Camera, Eye, EyeOff, KeyRound, Lock, Mail, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { errorMessage } from '@/services/api';
+import { errorMessage, setToken } from '@/services/api';
 import { authService } from '@/services/auth';
+import { uploadToCloudinary, uploadsService } from '@/services/shares';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { AuthButton, AuthError, AuthField, AuthLegal, AuthTitle, SocialRow } from '@/components/auth/AuthParts';
-import { LegalPopup } from '@/components/ui/LegalPopup';
 
 const registerSchema = z
   .object({
@@ -29,6 +29,9 @@ const registerSchema = z
   });
 type RegisterForm = z.infer<typeof registerSchema>;
 
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
 export function RegisterPage() {
   const { loginWithToken, user } = useAuth();
   const { push } = useToast();
@@ -39,9 +42,28 @@ export function RegisterPage() {
   const [pendingEmail, setPendingEmail] = useState(verifyEmail ?? '');
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
   const [otp, setOtp] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // The preview URL is revoked whenever the file changes or the page closes.
+  useEffect(() => {
+    if (!avatar) return setAvatarPreview(null);
+    const url = URL.createObjectURL(avatar);
+    setAvatarPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [avatar]);
+
+  const pickAvatar = (file: File | undefined) => {
+    setAvatarError(null);
+    if (!file) return;
+    if (!AVATAR_TYPES.includes(file.type)) return setAvatarError('Use a JPG, PNG or WebP image.');
+    if (file.size > AVATAR_MAX_BYTES) return setAvatarError('The image must be 2 MB or smaller.');
+    setAvatar(file);
+  };
 
   const {
     register,
@@ -74,10 +96,21 @@ export function RegisterPage() {
     setVerifying(true);
     try {
       const r = await authService.verifyOtp(pendingEmail, otp);
+      let account = r.user;
+      if (avatar) {
+        // Uploading needs a signed-in session, so it happens right after the email is verified. A failure never blocks sign-up.
+        try {
+          setToken(r.token);
+          const uploaded = await uploadToCloudinary(await uploadsService.sign('avatar'), avatar);
+          const saved = await uploadsService.saveAvatar(uploaded.secure_url, uploaded.public_id);
+          account = { ...account, avatarUrl: saved.avatarUrl };
+        } catch {
+          push('info', 'Account created, but the avatar could not be uploaded. You can add it on your profile.');
+        }
+      }
       push('success', 'Account verified. Welcome to ChallengeX.');
-      // Setting the session triggers the <Navigate> below, which sends the new
-      // member through the gate.
-      loginWithToken(r.token, r.user);
+      // Setting the session triggers the <Navigate> below, which sends the new member through the gate.
+      loginWithToken(r.token, account);
     } catch (err) {
       push('error', errorMessage(err));
       setVerifying(false);
@@ -107,7 +140,7 @@ export function RegisterPage() {
   );
 
   return (
-    <AuthGate height={stage === 'form' ? 790 : 640}>
+    <AuthGate height={stage === 'form' ? 870 : 640}>
       <div className="flex min-h-full flex-col justify-between gap-4">
         <AuthTitle
           subtitle={
@@ -130,6 +163,29 @@ export function RegisterPage() {
         {stage === 'form' ? (
           <form onSubmit={onSubmit} noValidate className="space-y-3" aria-label="Create account">
             {serverError && <AuthError>{serverError}</AuthError>}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                aria-label={avatar ? 'Change avatar' : 'Choose an avatar'}
+                className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border-visible)] bg-black/40 text-parchment-faint hover:text-parchment"
+              >
+                {avatarPreview ? <img src={avatarPreview} alt="" className="h-full w-full object-cover" /> : <Camera className="h-5 w-5" aria-hidden />}
+              </button>
+              <div className="min-w-0 font-narrative text-[12.5px] text-parchment-dim">
+                <button type="button" onClick={() => fileRef.current?.click()} className="text-crimson-glow underline underline-offset-2">
+                  {avatar ? 'Change avatar' : 'Add an avatar (optional)'}
+                </button>
+                {avatar && (
+                  <button type="button" onClick={() => { setAvatar(null); if (fileRef.current) fileRef.current.value = ''; }} className="ml-3 hover:text-parchment">
+                    Remove
+                  </button>
+                )}
+                <p className="text-[11px] text-parchment-faint">JPG, PNG or WebP, up to 2 MB</p>
+                {avatarError && <p role="alert" className="text-[11px] text-red-400">{avatarError}</p>}
+              </div>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" aria-label="Avatar image" onChange={(e) => pickAvatar(e.target.files?.[0])} />
+            </div>
             <AuthField icon={User} autoComplete="name" placeholder="Full name" aria-label="Full name" error={errors.displayName?.message} {...register('displayName')} />
             <AuthField icon={Mail} type="email" autoComplete="email" placeholder="Email address" aria-label="Email" error={errors.email?.message} {...register('email')} />
             <AuthField
@@ -155,21 +211,8 @@ export function RegisterPage() {
               <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-[var(--border-subtle)] bg-transparent accent-crimson" {...register('acceptTerms')} />
               <span>
                 I accept the{' '}
-                <button
-                  type="button"
-                  onClick={() => setShowLegal('terms')}
-                  className="text-crimson-glow underline underline-offset-2 hover:text-parchment"
-                >
-                  Terms of Service
-                </button>{' '}
-                and{' '}
-                <button
-                  type="button"
-                  onClick={() => setShowLegal('privacy')}
-                  className="text-crimson-glow underline underline-offset-2 hover:text-parchment"
-                >
-                  Privacy Policy
-                </button>.
+                <Link to="/terms" className="text-crimson-glow underline underline-offset-2">Terms of Service</Link> and{' '}
+                <Link to="/privacy" className="text-crimson-glow underline underline-offset-2">Privacy Policy</Link>.
               </span>
             </label>
             {errors.acceptTerms && (
@@ -215,17 +258,8 @@ export function RegisterPage() {
           </Link>
         </p>
 
-        <AuthLegal
-          onPrivacy={() => setShowLegal('privacy')}
-          onTerms={() => setShowLegal('terms')}
-        />
+        <AuthLegal />
       </div>
-
-      <LegalPopup
-        isOpen={showLegal === 'privacy' || showLegal === 'terms'}
-        onClose={() => setShowLegal(null)}
-        kind={showLegal ?? 'privacy'}
-      />
     </AuthGate>
   );
 }

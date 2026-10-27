@@ -7,7 +7,7 @@ import { db, getDb, isUniqueError } from '../lib/db';
 import { randomSlug } from '../lib/crypto';
 import { AppError, notFound } from '../lib/errors';
 import { currentUser, requireAuth } from '../middleware/auth';
-import { publicLimiter } from '../middleware/rateLimit';
+import { publicLimiter, shareLimiter } from '../middleware/rateLimit';
 import { isoStr } from '../lib/rows';
 import { assertOwner, loadSession } from '../services/engine/sessions';
 import { buildRoadmapSnapshot, buildVerdictSnapshot } from '../services/shareSnapshot';
@@ -19,6 +19,7 @@ const optionalUrl = z.string().url().max(600).nullable().optional();
 sharesRouter.post(
   '/',
   requireAuth,
+  shareLimiter,
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const body = z

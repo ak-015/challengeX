@@ -10,6 +10,7 @@ import {
 } from 'framer-motion';
 import { SkipForward } from 'lucide-react';
 import { assets } from '@/utils/assets';
+import { RealmScene } from '@/components/realm/RealmScene';
 import { Embers } from '@/components/animations/Atmosphere';
 import { Smoke } from '@/components/animations/Smoke';
 import { Flames } from '@/components/animations/Flames';
@@ -220,7 +221,8 @@ export function GateExperience() {
           }}
         >
           {/* 0 · open-gate plate (revealed behind the doors) */}
-          <img src={assets.gateOpen} alt="" aria-hidden draggable={false} className={fill} />
+          {/* live plate: the waterfalls and the lava river keep flowing behind the doors */}
+          <RealmScene scene="gateOpen" />
           <motion.div className="absolute inset-0" style={{ opacity: openSwordsOpacity }}>
             {SWORDS_OPEN.map((s) => (
               <SwordGlow key={`o${s.seed}`} {...s} />
@@ -281,14 +283,10 @@ export function GateExperience() {
 
           {/* 3 · the frame: closed plate with the doorway cut out */}
           <motion.div className="absolute inset-0" style={{ opacity: frameOpacity }}>
-            <img
-              src={assets.gateClosed}
-              alt=""
-              aria-hidden
-              draggable={false}
-              className={fill}
-              style={{ clipPath: 'url(#gx-frame)' }}
-            />
+            {/* the framing plate keeps its waterfalls flowing (fire + swords are drawn below) */}
+            <div className="absolute inset-0" style={{ clipPath: 'url(#gx-frame)' }}>
+              <RealmScene scene="gateWater" />
+            </div>
             {SWORDS_CLOSED.map((s) => (
               <SwordGlow key={`c${s.seed}`} {...s} />
             ))}
@@ -354,12 +352,23 @@ export function GateExperience() {
 
           {/* 6 · living fire on the braziers */}
           <Flames />
+
+          {phase === 'idle' && (
+            <div
+              style={{
+                left: `${GATE_CENTER.x * 100}%`,
+                top: `${GATE_CENTER.y * 100}%`,
+              }}
+              className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+            >
+            </div>
+          )}
         </motion.div>
       </motion.div>
 
       {/* embers + smoke sit above the camera so they never zoom with the art */}
       <Embers count={26} />
-      <Smoke boost={smokeBoost} intensity={1.15} heightClass="h-[62%]" />
+      <Smoke boost={smokeBoost} intensity={0.5} heightClass="h-[62%]" />
 
       {/* flash on the hand-over, fade-to-dark on exit */}
       <motion.div
@@ -409,35 +418,37 @@ export function GateExperience() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.4 } }}
-            className="absolute inset-0 flex flex-col items-center justify-end gap-6 bg-gradient-to-t from-black/85 via-black/15 to-transparent pb-14 sm:pb-20"
+            className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/85 via-black/15 to-transparent pb-14 sm:pb-20"
           >
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.9 }}
-              className="max-w-md px-6 text-center font-narrative text-lg italic text-parchment-dim sm:text-xl"
-            >
-              The realm awaits. Steel yourself, and cross the threshold.
-            </motion.p>
-            <motion.button
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.9 }}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={start}
-              className="gothic-btn-primary px-10 py-4 text-base shadow-crimson-md hover:shadow-crimson-lg"
-            >
-              Enter the Realm
-            </motion.button>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.7 }}
-              transition={{ delay: 1.6 }}
-              className="hidden font-heading text-[10px] uppercase tracking-[0.35em] text-parchment-faint sm:block"
-            >
-              Press Enter
-            </motion.p>
+            <div className="gate-idle-content flex max-w-full flex-col items-center gap-6">
+              <motion.p
+                initial={{ opacity: 0, x: -24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.9 }}
+                className="max-w-md px-6 text-center font-narrative text-lg italic text-parchment-dim sm:text-xl"
+              >
+                The realm awaits. Steel yourself, and cross the threshold.
+              </motion.p>
+              <motion.button
+                initial={{ opacity: 0, x: -24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9, duration: 0.9 }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={start}
+                className="gothic-btn-primary px-10 py-4 text-base shadow-crimson-md hover:shadow-crimson-lg"
+              >
+                Enter the Realm
+              </motion.button>
+              <motion.p
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 0.7, x: 0 }}
+                transition={{ delay: 1.6, duration: 0.7 }}
+                className="hidden font-heading text-[10px] uppercase tracking-[0.35em] text-parchment-faint sm:block"
+              >
+                Press Enter
+              </motion.p>
+            </div>
           </motion.div>
         )}
 

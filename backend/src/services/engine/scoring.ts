@@ -17,7 +17,7 @@ export function computeTotal(scores: ScoreMap): number {
   return Math.round((sum * 10) / CATEGORIES.length);
 }
 
-export type Verdict = 'KILL' | 'PIVOT' | 'BUILD';
+type Verdict = 'KILL' | 'PIVOT' | 'BUILD';
 
 export function verdictFor(total: number): Verdict {
   if (total < KILL_BELOW) return 'KILL';

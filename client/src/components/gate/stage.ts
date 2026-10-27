@@ -6,7 +6,7 @@
 export const STAGE_W = 1600;
 export const STAGE_H = 900;
 
-export type Pt = [number, number];
+type Pt = [number, number];
 
 /** Seam between the two closed door leaves. */
 export const SEAM_X = 845;
@@ -52,7 +52,7 @@ export function grow(points: Pt[], factor: number): Pt[] {
 }
 
 /** Polygon → objectBoundingBox fractions for an SVG clipPath. */
-export const toUnit = (points: Pt[]): Pt[] => points.map(([x, y]) => [x / STAGE_W, y / STAGE_H]);
+const toUnit = (points: Pt[]): Pt[] => points.map(([x, y]) => [x / STAGE_W, y / STAGE_H]);
 export const toPoints = (points: Pt[]) => toUnit(points).map(([x, y]) => `${x.toFixed(5)},${y.toFixed(5)}`).join(' ');
 export const toPath = (points: Pt[]) =>
   toUnit(points).map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(5)} ${y.toFixed(5)}`).join(' ') + ' Z';

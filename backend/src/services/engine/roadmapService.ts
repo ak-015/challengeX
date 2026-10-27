@@ -10,7 +10,7 @@ import { makeGraphSchema } from './schemas';
 import { loadOwnedSession } from './sessions';
 import type { SessionRow } from './types';
 
-export interface RoadmapInput {
+interface RoadmapInput {
   trialId?: string;
   ideaText?: string;
   techStack?: string;
@@ -22,7 +22,7 @@ export interface RoadmapInput {
   extra?: string;
 }
 
-export function undecidedFields(input: RoadmapInput): DecisionField[] {
+function undecidedFields(input: RoadmapInput): DecisionField[] {
   return DECISION_FIELDS.filter((f) => !input[f]?.trim());
 }
 
@@ -76,8 +76,10 @@ export async function generateRoadmap(userId: string, input: RoadmapInput) {
     user: [`Idea:\n${wrapUserData('idea', ideaText)}`, context, `User choices:\n${wrapUserData('choices', choices)}`].filter(Boolean).join('\n\n'),
     pool: getVerdictPool(),
     route: 'roadmap.generate',
-    maxTokens: 6000,
+    maxTokens: 3500,
     temperature: 0.2,
+    timeoutMs: 60_000,
+    budgetMs: 85_000,
   })) as unknown as Graph;
 
   const prisma = getDb();

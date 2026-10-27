@@ -22,15 +22,11 @@ export function getDb(): PrismaClient {
   return globalThis.__prisma;
 }
 
-export function resetDbForTests(): void {
-  globalThis.__prisma = undefined;
-}
-
 const PRISMA_NOT_FOUND = 'P2025';
 const PRISMA_UNIQUE = 'P2002';
 
 /** True when the error is Prisma's "record not found" (update/delete on missing row). */
-export function isNotFoundError(err: unknown): boolean {
+function isNotFoundError(err: unknown): boolean {
   return !!err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === PRISMA_NOT_FOUND;
 }
 

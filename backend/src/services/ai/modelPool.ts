@@ -5,7 +5,7 @@ import { Semaphore } from '../../lib/semaphore';
 import { parseModelId } from '../../config/env';
 import { NimError } from './nimClient';
 
-export interface ModelState {
+interface ModelState {
   id: string;
   inflight: number;
   cooldownUntil: number;
@@ -15,11 +15,11 @@ export interface ModelState {
   lastPicked: number;
   lastError: string | null;
 }
-export type Registry = Map<string, ModelState>;
+type Registry = Map<string, ModelState>;
 /** Shared by every pool in the process, so a model used by two pools shares its health. */
-export const globalRegistry: Registry = new Map();
+const globalRegistry: Registry = new Map();
 
-export interface AttemptInfo {
+interface AttemptInfo {
   route: string;
   model: string;
   ok: boolean;
@@ -27,7 +27,7 @@ export interface AttemptInfo {
   errorCode: string | null;
 }
 
-export interface PoolConfig {
+interface PoolConfig {
   name: string;
   models: string[];
   registry?: Registry;
@@ -37,7 +37,7 @@ export interface PoolConfig {
   onAttempt?: (a: AttemptInfo) => void;
 }
 
-export interface ExecuteOptions {
+interface ExecuteOptions {
   route: string;
   /** Soft exclusion: models to avoid if any other healthy model exists. */
   avoid?: string[];
@@ -45,7 +45,7 @@ export interface ExecuteOptions {
   budgetMs?: number;
 }
 
-export interface ModelStatus {
+interface ModelStatus {
   id: string;
   pools: string[];
   status: 'healthy' | 'cooling' | 'disabled';

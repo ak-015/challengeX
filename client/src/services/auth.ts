@@ -1,7 +1,7 @@
 import { api } from './api';
 import type { AuthResponse, User } from '@/types/api';
 
-export interface SignupInput {
+interface SignupInput {
   email: string;
   password: string;
   displayName: string;
@@ -29,4 +29,14 @@ export const authService = {
   me: () => api.get<{ user: User }>('/auth/me'),
 
   updateProfile: (displayName: string) => api.patch<{ user: User }>('/auth/me', { displayName }),
+
+  /** Redirect the browser to the backend's Google OAuth authorization URL. */
+  google: () => {
+    window.location.replace(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'}/auth/oauth/google`);
+  },
+
+  /** Redirect the browser to the backend's Apple OAuth authorization URL. */
+  apple: () => {
+    window.location.replace(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'}/auth/oauth/apple`);
+  },
 };

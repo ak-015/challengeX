@@ -81,7 +81,7 @@ export function HistoryPage() {
   const viewPath = (item: SessionListItem) => {
     if (item.kind === 'trial') return item.status === 'complete' ? `/challenge/${item.id}/verdict` : `/challenge/${item.id}/trial`;
     if (item.kind === 'roadmap') return '/roadmaps';
-    return '/history?kind=ideas';
+    return `/ideas/${item.id}`;
   };
 
   if (isLoading && !data) return <Spinner label="Summoning your records…" />;

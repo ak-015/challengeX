@@ -2,7 +2,7 @@
 import type { AdminUser, ModelStatus } from './adminApi';
 import type { Verdict } from '@/lib/constants';
 
-export interface UserActionState {
+interface UserActionState {
   /** every destructive action is disabled */
   locked: boolean;
   /** why, shown next to the buttons */
@@ -39,7 +39,7 @@ export function verdictBars(dist: Partial<Record<Verdict, number>>): { verdict: 
 
 export const percent = (r: number | null | undefined): string => (r === null || r === undefined ? 'n/a' : `${Math.round(r * 1000) / 10}%`);
 
-export const AUDIT_LABEL: Record<string, string> = {
+const AUDIT_LABEL: Record<string, string> = {
   'user.suspend': 'Suspended a user',
   'user.reactivate': 'Re-activated a user',
   'user.promote': 'Promoted a user to admin',

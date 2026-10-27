@@ -75,6 +75,9 @@ uniform float uBloom;
 uniform float uFlicker;
 uniform sampler2D uFogMask; // r: interior of painted fog banks
 uniform vec2 uFogFlow;      // amplitude (art px), cycles per second (0 = off)
+uniform int uWN;            // number of waterfalls
+uniform vec4 uWF[6];        // waterfall rect: x0 y0 x1 y1 (art px)
+uniform vec4 uWP[6];        // fall speed (px/s), lum lo, lum hi, max saturation
 out vec4 o;
 void main(){
   vec2 q = imgPosFrag();
@@ -108,6 +111,37 @@ void main(){
     float dn = nz(q / 210.0 + vec2(-uTime * 0.035, uTime * 0.012), 2);
     fogArt *= 0.9 + 0.22 * dn;
     art = mix(art, fogArt, smoothstep(0.02, 0.5, fm));
+  }
+
+  // ── waterfalls: the painted water streams downward. Only pale, desaturated pixels inside the
+  //    fall's rect move (rock and mist around them stay put). Each vertical strand runs on its own
+  //    phase, so the water shimmers instead of sliding as one sheet.
+  for (int i = 0; i < 6; i++) {
+    if (i >= uWN) break;
+    vec4 r = uWF[i];
+    if (q.x < r.x || q.x > r.z || q.y < r.y || q.y > r.w) continue;
+    float feather = smoothstep(r.x, r.x + 6.0, q.x) * (1.0 - smoothstep(r.z - 6.0, r.z, q.x))
+                  * smoothstep(r.y, r.y + 10.0, q.y) * (1.0 - smoothstep(r.w - 22.0, r.w, q.y));
+    vec3 a0 = texture(uArt, uv).rgb;
+    float lum0 = dot(a0, vec3(0.2126, 0.7152, 0.0722));
+    float mx = max(a0.r, max(a0.g, a0.b));
+    float sat0 = (mx - min(a0.r, min(a0.g, a0.b))) / max(mx, 1e-3);
+    float wm = smoothstep(uWP[i].y, uWP[i].z, lum0) * (1.0 - smoothstep(uWP[i].w, uWP[i].w + 0.14, sat0)) * feather;
+    if (wm < 0.01) continue;
+    float cyc = 2.4;
+    float amp = uWP[i].x / cyc;
+    float ph1 = fract(uTime * cyc + nz(vec2(q.x / 8.0, 3.0 + float(i) * 5.0), 2) * 0.9);
+    float ph2 = fract(ph1 + 0.5);
+    float wA = 1.0 - abs(2.0 * ph1 - 1.0);
+    vec3 s1 = texture(uArt, (q - vec2(0.0, (ph1 - 0.5) * amp)) / uImg).rgb;
+    vec3 s2 = texture(uArt, (q - vec2(0.0, (ph2 - 0.5) * amp)) / uImg).rgb;
+    vec3 wf = mix(s2, s1, wA);
+    // falling streaks and foam
+    float st  = nz(vec2(q.x / 3.6, q.y / 64.0 - uTime * uWP[i].x / 64.0), 3);
+    float st2 = nz(vec2(q.x / 7.5 + 4.0, q.y / 38.0 - uTime * uWP[i].x * 1.3 / 38.0), 0);
+    wf *= 0.87 + 0.34 * st;
+    wf += vec3(0.95, 0.82, 0.84) * pow(st2, 3.0) * 0.15;
+    art = mix(art, wf, wm);
   }
 
   float f1 = nz(q / 30.0 * vec2(1.0, 0.75) + vec2(0.0, -uTime * 1.2), 2);
@@ -357,6 +391,24 @@ void main(){
     A = A * (1.0 - a) + a;
   }
   o = vec4(C, A);
+}`;
+
+/* ───────────────────── spray plume at the foot of a waterfall ───────────────────── */
+export const FRAG_SPRAY = HEAD + COMMON + `
+uniform vec4 uSp;   // cx, base y, width, height (art px)
+uniform float uSpG;
+in vec2 vImg;
+out vec4 o;
+void main(){
+  float t = uTime;
+  vec2 p = vec2((vImg.x - uSp.x) / (uSp.z * 0.5), (uSp.y - vImg.y) / uSp.w); // y up from the base
+  float r = length(vec2(p.x, p.y > 0.0 ? p.y * 0.85 : p.y * 2.4));
+  float body = smoothstep(1.0, 0.1, r);
+  float n = nz(vec2(vImg.x / 22.0 + t * 0.35, vImg.y / 22.0 + t * 0.8), 2) * 0.55
+          + nz(vec2(vImg.x / 10.0 - t * 0.5, vImg.y / 10.0 + t * 1.5), 3) * 0.45;
+  float puff = smoothstep(0.38, 0.78, n);
+  vec3 col = vec3(0.96, 0.84, 0.86) * body * puff * uSpG;
+  o = vec4(col, 1.0);
 }`;
 
 /* ───────────────────────────────── embers (points) ───────────────────────────────── */

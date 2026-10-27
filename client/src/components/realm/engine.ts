@@ -2,7 +2,7 @@ import type { SceneConfig, Vec2 } from './scenes';
 import { makeNoise } from './masks';
 import type { SceneAssets } from './masks';
 import {
-  FRAG_EMBER, FRAG_FLAME, FRAG_FLOW, FRAG_FOG, FRAG_MOON, FRAG_SCENE, FRAG_SWORD,
+  FRAG_EMBER, FRAG_FLAME, FRAG_FLOW, FRAG_FOG, FRAG_MOON, FRAG_SCENE, FRAG_SPRAY, FRAG_SWORD,
   VERT_EMBER, VERT_FULL, VERT_QUAD,
 } from './shaders';
 
@@ -16,7 +16,7 @@ import {
  * `object-position`, and every effect is positioned in artwork pixels.
  */
 
-export interface EngineOptions {
+interface EngineOptions {
   objectPosition: Vec2;
   /** multiplier on every additive effect (0 disables them, 1 = authored look) */
   intensity: number;
@@ -98,7 +98,7 @@ export class RealmEngine {
   private gl: WebGL2RenderingContext;
   private cfg: SceneConfig;
   private opts: EngineOptions;
-  private progs!: Record<'scene' | 'flame' | 'flow' | 'moon' | 'sword' | 'fog' | 'ember', Prog>;
+  private progs!: Record<'scene' | 'flame' | 'flow' | 'moon' | 'sword' | 'fog' | 'ember' | 'spray', Prog>;
   private emberVao!: WebGLVertexArrayObject;
   private emberBuf!: WebGLBuffer;
   private emberCount = 0;
@@ -135,7 +135,8 @@ export class RealmEngine {
     const { cfg } = this;
 
     this.progs = {
-      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker', 'uFogMask', 'uFogFlow']),
+      scene: program(gl, VERT_FULL, FRAG_SCENE, [...COMMON_U, 'uArt', 'uData', 'uHeat', 'uBloom', 'uFlicker', 'uFogMask', 'uFogFlow', 'uWN', 'uWF', 'uWP']),
+      spray: program(gl, VERT_QUAD, FRAG_SPRAY, [...COMMON_U, 'uRect', 'uSp', 'uSpG']),
       flame: program(gl, VERT_QUAD, FRAG_FLAME, [...COMMON_U, 'uRect', 'uF', 'uFP']),
       flow: program(gl, VERT_QUAD, FRAG_FLOW, [...COMMON_U, 'uRect', 'uData', 'uRegion', 'uDir', 'uFlow', 'uColor']),
       moon: program(gl, VERT_QUAD, FRAG_MOON, [...COMMON_U, 'uRect', 'uData', 'uArt', 'uM', 'uMP']),
@@ -232,6 +233,16 @@ export class RealmEngine {
       gl.uniform1f(p.u.uHeat, cfg.heat * I);
       gl.uniform1f(p.u.uBloom, cfg.bloom * I);
       gl.uniform1f(p.u.uFlicker, cfg.flicker * Math.min(1, I));
+      const wfs = (cfg.waterfalls ?? []).slice(0, 6);
+      const WF = new Float32Array(24);
+      const WP = new Float32Array(24);
+      wfs.forEach((w, i) => {
+        WF.set(w.rect, i * 4);
+        WP.set([w.speed, w.pale[0], w.pale[1], w.sat], i * 4);
+      });
+      gl.uniform1i(p.u.uWN, wfs.length);
+      gl.uniform4fv(p.u.uWF, WF);
+      gl.uniform4fv(p.u.uWP, WP);
       gl.uniform1i(p.u.uFogMask, 3);
       gl.uniform2f(p.u.uFogFlow, cfg.fogFlow ? cfg.fogFlow.amp * Math.min(1, I) : 0, cfg.fogFlow?.speed ?? 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -297,6 +308,21 @@ export class RealmEngine {
         gl.uniform3f(p.u.uFP, i * 1.37 + 0.5, (f.gain ?? 1) * I, f.sharp ? 1 : 0);
         quad([f.x - f.w * 2.2, f.y - f.h * 2.0, f.x + f.w * 2.2, f.y + (f.sharp ? f.h * 0.15 : f.h * 1.3)], p);
       });
+    }
+
+    // spray at the foot of each waterfall
+    {
+      const sprays = (cfg.waterfalls ?? []).filter((w) => w.spray);
+      if (sprays.length) {
+        const p = progs.spray;
+        this.common(p, t);
+        for (const w of sprays) {
+          const [cx, by, sw, sh] = w.spray!;
+          gl.uniform4f(p.u.uSp, cx, by, sw, sh);
+          gl.uniform1f(p.u.uSpG, 0.3 * I);
+          quad([cx - sw * 0.8, by - sh * 1.3, cx + sw * 0.8, by + sh * 0.5], p);
+        }
+      }
     }
 
     // burning moon

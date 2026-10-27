@@ -8,7 +8,7 @@ export interface NextDecision {
   text?: string | null;
 }
 
-export const normalizeText = (t: string): string => t.toLowerCase().replace(/\s+/g, ' ').trim();
+const normalizeText = (t: string): string => t.toLowerCase().replace(/\s+/g, ' ').trim();
 
 export function uncoveredCategories(qa: QaEntry[]): Category[] {
   const covered = new Set(qa.map((q) => q.category));
@@ -22,8 +22,6 @@ export function skippedByCategory(qa: QaEntry[]): Record<Category, number> {
   for (const q of qa) if (q.skipped) out[q.category]++;
   return out;
 }
-
-export const isCapReached = (askedCount: number): boolean => askedCount >= MAX_QUESTIONS;
 
 /** Returns a human-readable violation (used as the correction prompt) or null when the decision is acceptable. */
 export function checkDecision(d: NextDecision, qa: QaEntry[], plannedTotal = MIN_QUESTIONS): string | null {
@@ -75,7 +73,7 @@ export interface AnswerInput {
   skipped?: boolean;
 }
 
-export interface AnswerResult {
+interface AnswerResult {
   qa: QaEntry[];
   assumptions: Assumption[];
   skippedCount: number;
@@ -111,7 +109,7 @@ export function applyAnswer(qa: QaEntry[], assumptions: Assumption[], skippedCou
 }
 
 /** The question to assess is always the LAST one: it must be answered (not skipped) and not yet assessed. */
-export function lastUnassessed(qa: QaEntry[]): QaEntry | undefined {
+function lastUnassessed(qa: QaEntry[]): QaEntry | undefined {
   const q = qa[qa.length - 1];
   return q && q.answer !== null && !q.skipped && q.assessment === null ? q : undefined;
 }
@@ -133,13 +131,6 @@ export function applyAssessment(
       { id: randomUUID(), category: assessment.category, risk: assessment.risk, text: assessment.assumption, source: 'assessment', questionId: target.id },
     ],
   };
-}
-
-export interface RawStruggle {
-  title: string;
-  category: Category;
-  questionId: string;
-  why: string;
 }
 
 /** Excerpt is taken by the SERVER from the stored answer (verbatim, <=200 chars), never by the model. */

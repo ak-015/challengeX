@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Apple, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useToast } from '@/hooks/useToast';
+import { authService } from '@/services/auth';
 
 /** Wordmark + tagline + ornamental rule that opens every gate window. */
 export function AuthTitle({ subtitle }: { subtitle: ReactNode }) {
@@ -19,7 +19,7 @@ export function AuthTitle({ subtitle }: { subtitle: ReactNode }) {
   );
 }
 
-export function Ornament({ className = '' }: { className?: string }) {
+function Ornament({ className = '' }: { className?: string }) {
   return (
     <div className={clsx('flex items-center justify-center gap-2.5', className)} aria-hidden>
       <span className="h-px w-24 bg-gradient-to-r from-transparent to-crimson/80" />
@@ -93,10 +93,8 @@ function GoogleG() {
   );
 }
 
-/** "OR SIGN IN WITH" + Google / Apple. The backend has no OAuth yet, so these say so plainly. */
+/** "OR SIGN IN WITH" + Google / Apple. Redirects to the backend OAuth endpoints. */
 export function SocialRow({ verb = 'SIGN IN' }: { verb?: string }) {
-  const { push } = useToast();
-  const soon = (name: string) => () => push('info', `${name} sign-in isn't available yet — please use your email.`);
   return (
     <div>
       <div className="flex items-center gap-3 font-heading text-[10px] uppercase tracking-[0.22em] text-parchment-faint" aria-hidden>
@@ -105,10 +103,10 @@ export function SocialRow({ verb = 'SIGN IN' }: { verb?: string }) {
         <span className="h-px flex-1 bg-[var(--border-subtle)]" />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <button type="button" onClick={soon('Google')} className="auth-social" title="Coming soon">
+        <button type="button" onClick={() => authService.google()} className="auth-social" title="Sign in with Google">
           <GoogleG /> Google
         </button>
-        <button type="button" onClick={soon('Apple')} className="auth-social" title="Coming soon">
+        <button type="button" onClick={() => authService.apple()} className="auth-social" title="Sign in with Apple">
           <Apple className="h-[18px] w-[18px]" aria-hidden /> Apple
         </button>
       </div>
@@ -116,34 +114,14 @@ export function SocialRow({ verb = 'SIGN IN' }: { verb?: string }) {
   );
 }
 
-export function AuthLegal({
-  onPrivacy,
-  onTerms,
-}: {
-  onPrivacy?: () => void;
-  onTerms?: () => void;
-} = {}) {
+export function AuthLegal() {
   return (
     <div className="text-center font-narrative text-[10.5px] leading-relaxed text-parchment-faint">
       <p>© 2026 ChallengeX. All rights reserved.</p>
       <p className="mt-0.5">
-        <button
-          type="button"
-          onClick={onPrivacy}
-          className={clsx('hover:text-parchment-dim', !onPrivacy && 'text-parchment-faint cursor-not-allowed')}
-          disabled={!onPrivacy}
-        >
-          Privacy Policy
-        </button>
+        <Link to="/privacy" className="hover:text-parchment-dim">Privacy Policy</Link>
         <span className="mx-2 text-crimson/60">|</span>
-        <button
-          type="button"
-          onClick={onTerms}
-          className={clsx('hover:text-parchment-dim', !onTerms && 'text-parchment-faint cursor-not-allowed')}
-          disabled={!onTerms}
-        >
-          Terms of Service
-        </button>
+        <Link to="/terms" className="hover:text-parchment-dim">Terms of Service</Link>
         <span className="mx-2 text-crimson/60">|</span>
         <a href="mailto:support@challengex.app" className="hover:text-parchment-dim">Support</a>
       </p>

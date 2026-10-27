@@ -3,7 +3,7 @@
  * card showing that frame (x/y = centre, r = glow radius, all relative to card width/height
  * as noted). Measured from the artwork's bright gem cores.
  */
-export interface Gem {
+interface Gem {
   /** % of card width */
   x: number;
   /** % of card height */

@@ -1,5 +1,5 @@
 // In-memory ring buffer of the last provider failures for the admin "system" view. No secrets, no user text.
-export interface FailureRecord {
+interface FailureRecord {
   at: string;
   provider: 'nim' | 'search' | 'email';
   target: string | null;

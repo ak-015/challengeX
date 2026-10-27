@@ -1,5 +1,5 @@
 /** Remove <think> blocks and code-fence markers that reasoning models love to emit. */
-export function stripNoise(text: string): string {
+function stripNoise(text: string): string {
   let t = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
   const closing = t.toLowerCase().lastIndexOf('</think>');
   if (closing >= 0) t = t.slice(closing + '</think>'.length);

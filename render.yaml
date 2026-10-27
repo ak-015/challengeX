@@ -1,5 +1,5 @@
-# Render Blueprint for the whole project (API + static client). Put this file at the REPO ROOT
-# (the folder that contains backend/ and client/). It replaces backend/render.yaml.
+# Render Blueprint for the whole project: API + client (static) + admin console (static).
+# Lives at the REPO ROOT (the folder that contains backend/, client/ and admin/).
 # VERIFY the static-site keys against https://render.com/docs/blueprint-spec before the first deploy.
 services:
   # ------------------------------------------------------------ API
@@ -17,7 +17,11 @@ services:
         value: 20
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_ORIGIN # the static site URL below, e.g. https://challenge-create-client.onrender.com
+      - key: FRONTEND_ORIGIN # comma-separated: the client AND admin site URLs, no trailing slash
+        sync: false
+      - key: FRONTEND_URL # the client site URL (OAuth sends the browser back here)
+        sync: false
+      - key: API_PUBLIC_URL # this API's own public URL, e.g. https://challenge-create-server.onrender.com
         sync: false
       - key: JWT_SECRET
         generateValue: true
@@ -43,6 +47,8 @@ services:
         sync: false
       - key: NIM_MAX_CONCURRENCY
         value: 4
+      - key: NIM_USE_RESPONSE_FORMAT
+        value: false
       - key: SEARCH_PROVIDER
         value: tavily
       - key: TAVILY_API_KEY
@@ -71,6 +77,18 @@ services:
         sync: false
       - key: DEV_LOG_OTP
         value: false
+      - key: GOOGLE_CLIENT_ID # optional: Google sign-in
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: APPLE_CLIENT_ID # optional: Apple sign-in
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
+        sync: false
 
   # ------------------------------------------------------------ Client (static site)
   - type: web
@@ -83,7 +101,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: VITE_API_BASE_URL # e.g. https://challenge-create-server.onrender.com (no trailing slash)
+      - key: VITE_API_BASE_URL # the API URL WITH the /api prefix, e.g. https://challenge-create-server.onrender.com/api
+        sync: false
+      - key: VITE_ADMIN_URL # optional: admin console URL (shows an Admin link to admins)
         sync: false
     routes:
       - type: rewrite # SPA fallback
@@ -104,7 +124,6 @@ services:
         value: camera=(), microphone=(), geolocation=()
       # CSP: our own origin, Google Fonts, Cloudinary and our API only.
       # !! Replace YOUR-API.onrender.com with your real API origin (headers cannot read env vars).
-      # fonts.googleapis.com / fonts.gstatic.com are in connect-src because html-to-image fetches the font CSS when exporting.
       - path: /*
         name: Content-Security-Policy
         value: >-
@@ -113,6 +132,51 @@ services:
           style-src 'self' https://fonts.googleapis.com;
           style-src-attr 'unsafe-inline';
           font-src 'self' data: https://fonts.gstatic.com;
-          img-src 'self' data: blob: https://res.cloudinary.com;
-          connect-src 'self' data: blob: https://YOUR-API.onrender.com https://api.cloudinary.com https://fonts.googleapis.com https://fonts.gstatic.com;
+          img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com;
+          connect-src 'self' https://YOUR-API.onrender.com https://api.cloudinary.com;
           media-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+  # ------------------------------------------------------------ Admin console (static site)
+  - type: web
+    name: challenge-create-admin
+    runtime: static
+    rootDir: admin
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: VITE_API_BASE_URL # the API origin WITHOUT /api, e.g. https://challenge-create-server.onrender.com
+        sync: false
+      - key: VITE_APP_URL # optional: client URL ("Open the app" link)
+        sync: false
+    routes:
+      - type: rewrite # SPA fallback
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: no-referrer
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex, nofollow
+      # !! Replace YOUR-API.onrender.com with your real API origin (headers cannot read env vars).
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'none';
+          script-src 'self';
+          style-src 'self' https://fonts.googleapis.com;
+          style-src-attr 'unsafe-inline';
+          font-src 'self' data: https://fonts.gstatic.com;
+          img-src 'self' data: https://res.cloudinary.com https://lh3.googleusercontent.com;
+          connect-src 'self' https://YOUR-API.onrender.com;
+          object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

@@ -8,7 +8,7 @@ export interface DayCount {
   day: string;
   count: number;
 }
-export interface AdminStats {
+interface AdminStats {
   totals: { users: number; verifiedUsers: number; trials: number; completedTrials: number; roadmaps: number; shares: number };
   verdictDistribution: Partial<Record<Verdict, number>>;
   avgScore: number | null;
@@ -72,7 +72,7 @@ export interface ModelStatus {
   cooldownRemainingMs: number;
   lastError: string | null;
 }
-export interface SystemInfo {
+interface SystemInfo {
   models: ModelStatus[];
   search: { provider: string; configured: boolean };
   email: { brevo: boolean; resend: boolean };

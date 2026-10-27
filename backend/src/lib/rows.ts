@@ -1,5 +1,4 @@
-// Maps Prisma (camelCase + Date) rows to the app's legacy snake_case row shapes.
-// Keeps the rest of the codebase (DTOs, tests, snapshots) unchanged.
+// Maps Prisma (camelCase + Date) session rows to the snake_case SessionRow used by the engine.
 import type { SessionRow } from '../services/engine/types';
 
 export const iso = (d: Date | string | null | undefined): string | null => {
@@ -63,7 +62,7 @@ export function toSessionRow(p: PrismaSession): SessionRow {
   };
 }
 
-/** Converts a legacy snake_case session patch to Prisma camelCase input. */
+/** Converts a snake_case session patch to Prisma camelCase input. */
 export function toSessionPatch(patch: Record<string, unknown>): Record<string, unknown> {
   const map: Record<string, string> = {
     user_id: 'userId',
@@ -79,48 +78,4 @@ export function toSessionPatch(patch: Record<string, unknown>): Record<string, u
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) out[map[k] ?? k] = v;
   return out;
-}
-
-export type LegacyUser = {
-  id: string;
-  email: string;
-  password_hash: string;
-  display_name: string;
-  avatar_url: string | null;
-  avatar_public_id: string | null;
-  email_verified: boolean;
-  role: string;
-  status: string;
-  last_login_at: string | null;
-  created_at: string;
-};
-
-type PrismaUser = {
-  id: string;
-  email: string;
-  passwordHash: string;
-  displayName: string;
-  avatarUrl: string | null;
-  avatarPublicId: string | null;
-  emailVerified: boolean;
-  role: string;
-  status: string;
-  lastLoginAt: Date | string | null;
-  createdAt: Date | string;
-};
-
-export function toUserRow(p: PrismaUser): LegacyUser {
-  return {
-    id: p.id,
-    email: p.email,
-    password_hash: p.passwordHash,
-    display_name: p.displayName,
-    avatar_url: p.avatarUrl,
-    avatar_public_id: p.avatarPublicId,
-    email_verified: p.emailVerified,
-    role: p.role,
-    status: p.status,
-    last_login_at: iso(p.lastLoginAt),
-    created_at: isoStr(p.createdAt),
-  };
 }

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-export interface Pt {
+interface Pt {
   x: number;
   y: number;
 }

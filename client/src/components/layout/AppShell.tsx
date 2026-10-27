@@ -3,10 +3,13 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
   Menu, X, LogOut, Home, Swords, Lightbulb, Map, History,
-  User as UserIcon, Settings, FlaskConical, Bell, Bookmark, Shield, ChevronDown,
+  User as UserIcon, Settings, FlaskConical, Bookmark, Shield, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { RealmScene } from '@/components/realm/RealmScene';
+
+// Only shown when configured (or on the local dev server), so production never links to localhost.
+const ADMIN_URL = (import.meta.env.VITE_ADMIN_URL as string | undefined) || (import.meta.env.DEV ? 'http://localhost:5174' : undefined);
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -17,7 +20,6 @@ const navItems = [
   { to: '/history', label: 'History', icon: History },
   { to: '/saved', label: 'Saved', icon: Bookmark },
   { to: '/experiments', label: 'Experiments', icon: FlaskConical },
-  { to: '/notifications', label: 'Alerts', icon: Bell },
 ];
 
 interface AppShellProps {
@@ -86,11 +88,11 @@ export function AppShell({ children, showSidebar = false, bare = false, backdrop
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            {user?.role === 'admin' && (
+            {user?.role === 'admin' && ADMIN_URL && (
               <a
-                href={(import.meta.env.VITE_ADMIN_URL as string | undefined) ?? 'http://localhost:5174'}
+                href={ADMIN_URL}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-crimson/30 bg-black/30 px-3 py-1.5 text-xs font-heading uppercase tracking-widest text-crimson-glow hover:bg-crimson-soft"
               >
                 <Shield className="h-3.5 w-3.5" aria-hidden />

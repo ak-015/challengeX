@@ -38,6 +38,7 @@ const schema = z
     NIM_VERDICT_MODELS: csv,
     NIM_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
     NIM_USE_RESPONSE_FORMAT: flag,
+    NIM_REASONING_EFFORT: z.enum(['low', 'medium', 'high']).optional(),
     SEARCH_PROVIDER: z.enum(['tavily', 'brave']).default('tavily'),
     TAVILY_API_KEY: opt,
     BRAVE_API_KEY: opt,
@@ -52,6 +53,19 @@ const schema = z
     ADMIN_EMAILS: csv.transform((a) => a.map((e) => e.toLowerCase())),
     ADMIN_PASSWORD: z.string().optional().refine((v) => v === undefined || v.length >= 8, 'must be at least 8 characters when set'),
     DEV_LOG_OTP: flag,
+
+    // ---------- OAuth ----------
+    GOOGLE_CLIENT_ID: opt,
+    GOOGLE_CLIENT_SECRET: opt,
+    APPLE_CLIENT_ID: opt,
+    APPLE_TEAM_ID: opt,
+    APPLE_KEY_ID: opt,
+    APPLE_PRIVATE_KEY: opt,
+    // Public URL of the client app; the browser is sent here after OAuth. Defaults to the first FRONTEND_ORIGIN.
+    FRONTEND_URL: opt,
+    // Public URL of THIS API (no trailing slash). Providers redirect back to <API_PUBLIC_URL>/api/auth/oauth/<provider>/callback.
+    // Defaults to FRONTEND_URL, which only works when that site proxies /api to this server (as the Vite dev server does).
+    API_PUBLIC_URL: opt,
   })
   .superRefine((e, ctx) => {
     const need = (cond: boolean, path: string, message: string) => {
@@ -64,10 +78,15 @@ const schema = z
     const hasEmail = (!!e.BREVO_API_KEY && !!e.BREVO_SENDER_EMAIL) || (!!e.RESEND_API_KEY && !!e.RESEND_FROM);
     need(e.NODE_ENV !== 'production' || hasEmail, 'BREVO_API_KEY', 'production needs Brevo or Resend configured for OTP email');
     const hasAi = !!(e.GROQ_API_KEY || e.GEMINI_API_KEY || e.NVIDIA_API_KEY);
+    for (const key of ['JWT_SECRET', 'OTP_SECRET'] as const) {
+      need(e.NODE_ENV !== 'production' || !/^(change-me|replace-with)/i.test(e[key]), key, 'still set to the .env.example placeholder; generate a random value');
+    }
+    need(!e.FRONTEND_URL || /^https?:\/\//.test(e.FRONTEND_URL), 'FRONTEND_URL', 'must be an http(s) URL');
+    need(!e.API_PUBLIC_URL || /^https?:\/\//.test(e.API_PUBLIC_URL), 'API_PUBLIC_URL', 'must be an http(s) URL');
     need(hasAi, 'GROQ_API_KEY', 'set at least one AI provider key: GROQ_API_KEY, GEMINI_API_KEY, or NVIDIA_API_KEY');
   });
 
-export type Env = z.infer<typeof schema>;
+type Env = Omit<z.infer<typeof schema>, 'FRONTEND_URL' | 'API_PUBLIC_URL'> & { FRONTEND_URL: string; API_PUBLIC_URL: string };
 
 /** OpenAI-compatible AI providers this app can route to. */
 export type AiProvider = 'groq' | 'gemini' | 'nvidia';
@@ -98,7 +117,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     const lines = result.error.issues.map((i) => `  - ${i.path.join('.') || '(env)'}: ${i.message}`);
     throw new Error(`Invalid environment configuration:\n${lines.join('\n')}\nSee .env.example`);
   }
-  return result.data;
+  const data = result.data;
+  const frontendUrl = (data.FRONTEND_URL ?? data.FRONTEND_ORIGIN[0] ?? 'http://localhost:5173').replace(/\/+$/, '');
+  return { ...data, FRONTEND_URL: frontendUrl, API_PUBLIC_URL: (data.API_PUBLIC_URL ?? frontendUrl).replace(/\/+$/, '') };
 }
 
 let cached: Env | undefined;
@@ -106,10 +127,6 @@ let cached: Env | undefined;
 export function env(): Env {
   if (!cached) cached = loadEnv();
   return cached;
-}
-
-export function resetEnvCache(): void {
-  cached = undefined;
 }
 
 export const emailProviders = () => {

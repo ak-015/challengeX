@@ -7,7 +7,7 @@ import type { SearchProvider, SearchResult } from './types';
 
 export type { SearchResult } from './types';
 
-export interface SearchServiceOptions {
+interface SearchServiceOptions {
   timeoutMs?: number;
   retries?: number;
   cacheTtlMs?: number;
@@ -24,7 +24,7 @@ export function hostOf(url: string): string {
   }
 }
 
-export class SearchService {
+class SearchService {
   private readonly cache: TtlLru<SearchResult[]>;
   private readonly timeoutMs: number;
   private readonly retries: number;

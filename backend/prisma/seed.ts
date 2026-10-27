@@ -14,9 +14,10 @@ async function main() {
 
   const password = process.env.ADMIN_PASSWORD;
   if (!password || password.length < 8) throw new Error('ADMIN_PASSWORD must be set to at least 8 characters to seed admins.');
+  if (/^replace-with/i.test(password)) throw new Error('ADMIN_PASSWORD is still the .env.example placeholder; set a real secret.');
   for (const email of emails) z.string().email().parse(email);
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
   for (const email of emails) {
     const displayName = email.slice(0, email.indexOf('@')).slice(0, 50) || 'Admin';
     await prisma.user.upsert({

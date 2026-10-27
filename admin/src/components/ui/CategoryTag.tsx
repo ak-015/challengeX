@@ -1,7 +1,7 @@
 import { CATEGORY_LABEL, type Category } from '@/lib/constants';
 import { Icon, type IconName } from './Icon';
 
-export const CATEGORY_ICON: Record<Category, IconName> = {
+const CATEGORY_ICON: Record<Category, IconName> = {
   technical: 'gear',
   market: 'chart',
   social: 'people',

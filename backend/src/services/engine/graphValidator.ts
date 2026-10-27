@@ -1,9 +1,9 @@
 export const STAGES = ['validate', 'spec', 'design', 'blueprint', 'prototype', 'launch'] as const;
-export type Stage = (typeof STAGES)[number];
+type Stage = (typeof STAGES)[number];
 export const DECISION_FIELDS = ['techStack', 'marketing', 'team', 'timeline', 'budget', 'platform'] as const;
 export type DecisionField = (typeof DECISION_FIELDS)[number];
 
-export interface GraphNode {
+interface GraphNode {
   id: string;
   stage: Stage;
   type: 'step' | 'decision' | 'milestone';
@@ -16,7 +16,7 @@ export interface GraphNode {
   betterPath?: string | null;
   decisionField?: DecisionField | null;
 }
-export interface GraphEdge {
+interface GraphEdge {
   from: string;
   to: string;
   kind: 'recommended' | 'alternate' | 'normal';

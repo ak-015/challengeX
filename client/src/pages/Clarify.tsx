@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Pencil } from 'lucide-react';
@@ -35,6 +35,11 @@ export function ClarifyPage() {
   const [targetUsers, setTargetUsers] = useState(understanding?.targetUsers ?? '');
   const [solution, setSolution] = useState(understanding?.proposedSolution ?? '');
   const [busy, setBusy] = useState(false);
+
+  // Research competitors and generate the first question in the background while the summary is being read.
+  useEffect(() => {
+    if (id) trialsService.next(id).catch(() => undefined);
+  }, [id]);
 
   // Sync fields once when backend data arrives.
   const loadedKey = `${understanding?.problem ?? ''}|${understanding?.targetUsers ?? ''}`;

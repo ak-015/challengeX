@@ -27,7 +27,7 @@ export class ApiError extends Error {
 }
 
 /** Raised when the network itself fails (offline, DNS, CORS preflight failure...). */
-export class NetworkError extends Error {
+class NetworkError extends Error {
   constructor(message = 'Network error — the server could not be reached') {
     super(message);
     this.name = 'NetworkError';
@@ -60,7 +60,7 @@ export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
   onUnauthorized = fn;
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, query, auth = true, signal } = options;
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';

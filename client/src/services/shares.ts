@@ -27,7 +27,7 @@ export async function uploadToCloudinary(
   const form = new FormData();
   for (const [k, v] of Object.entries(signed.params)) form.append(k, v);
   form.append('timestamp', String(signed.timestamp));
-  form.append('api_key', signed.api_key);
+  form.append('api_key', signed.apiKey);
   form.append('signature', signed.signature);
   form.append('file', file);
 

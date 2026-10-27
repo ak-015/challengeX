@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Swords, Zap, Users, Skull, Gauge } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/services/api';
@@ -11,7 +10,7 @@ import { MODES, RISK_CATEGORIES } from '@/types/api';
 import type { ModeKey } from '@/types/api';
 import { Embers } from '@/components/animations/Atmosphere';
 
-const MAX_IDEA = 1000;
+const MAX_IDEA = 2000;
 
 const modeIcons: Record<ModeKey, typeof Swords> = {
   stress_test: Swords,
@@ -66,41 +65,42 @@ export function ChallengeNewPage() {
         </p>
       </header>
 
-      <div className="gothic-panel p-6 sm:p-8 space-y-8">
-        <Textarea
-          label="Your Idea"
-          required
-          maxLength={MAX_IDEA}
-          placeholder="Describe the business or project idea you want to test…"
-          hint={`${trimmed.length}/${MAX_IDEA} characters (minimum 20)`}
-          error={
-            error && error.toLowerCase().includes('character')
-              ? error
-              : undefined
-          }
-          value={idea}
-          onChange={(e) => {
-            setIdea(e.target.value);
-            if (error) setError(null);
-          }}
-        />
+      <div className="trial-forge-panel space-y-5 rounded-lg p-5 sm:p-7">
+        <div className="trial-idea-field">
+          <Textarea
+            label="Your Idea"
+            required
+            maxLength={MAX_IDEA}
+            placeholder="Describe the business or project idea you want to test…"
+            hint={`${trimmed.length}/${MAX_IDEA} characters (minimum 20)`}
+            className="trial-answer-input"
+            error={
+              error && error.toLowerCase().includes('character')
+                ? error
+                : undefined
+            }
+            value={idea}
+            onChange={(e) => {
+              setIdea(e.target.value);
+              if (error) setError(null);
+            }}
+          />
+        </div>
 
         <fieldset>
-          <legend className="text-sm font-heading text-parchment-dim mb-3">
-            Intensity <span className="text-crimson-glow" aria-hidden>*</span>
+          <legend className="mb-2 font-display text-xs uppercase tracking-[0.16em] text-[#56372b]">
+            Trial Intensity <span className="text-[#a20e1b]" aria-hidden>*</span>
           </legend>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Trial intensity">
+          <div className="trial-mode-options" role="radiogroup" aria-label="Trial intensity">
             {(Object.keys(MODES) as ModeKey[]).map((key) => {
               const Icon = modeIcons[key];
               const active = mode === key;
+              const label = key === 'stress_test' ? 'Stress Test' : `${MODES[key].label} Mode`;
               return (
                 <label
                   key={key}
-                  className={`relative flex items-start gap-3 rounded-md border p-4 cursor-pointer transition-all ${
-                    active
-                      ? 'border-[var(--border-visible)] bg-crimson-soft shadow-crimson-sm'
-                      : 'border-[var(--border-subtle)] bg-surface-elevated hover:bg-surface-hover'
-                  } ${key === 'stress_test' ? 'sm:col-span-2' : ''}`}
+                  className={`trial-mode-option ${active ? 'is-selected' : ''}`}
+                  title={MODES[key].directive}
                 >
                   <input
                     type="radio"
@@ -109,44 +109,27 @@ export function ChallengeNewPage() {
                     checked={active}
                     onChange={() => setMode(key)}
                     className="sr-only"
-                    aria-label={MODES[key].label}
+                    aria-label={`${label}: ${MODES[key].directive}`}
                   />
-                  <span className={`mt-0.5 ${active ? 'text-crimson-glow' : 'text-parchment-faint'}`}>
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block font-heading text-sm tracking-widest uppercase text-parchment">
-                      {MODES[key].label}
-                      {active && <span className="ml-2 text-crimson-glow" aria-hidden>●</span>}
-                    </span>
-                    <span className="mt-1 block text-sm text-parchment-dim font-body leading-snug">
-                      {MODES[key].directive}
-                    </span>
-                  </span>
-                  {active && (
-                    <motion.span
-                      layoutId="mode-marker"
-                      className="absolute right-3 top-3 h-2 w-2 rounded-full bg-crimson-glow shadow-crimson-sm"
-                      aria-hidden
-                    />
-                  )}
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span>{label}</span>
                 </label>
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-parchment-faint" aria-live="polite">
-            Selected intensity: <span className="text-parchment-dim">{MODES[mode].label}</span> — covers:{' '}
+          <p className="mt-2 text-xs text-[#694c3d]" aria-live="polite">
+            Selected: <span className="font-semibold text-[#492c23]">{MODES[mode].label}</span> — covers:{' '}
             {RISK_CATEGORIES.join(', ')}.
           </p>
         </fieldset>
 
         {error && !error.toLowerCase().includes('character') && (
-          <div role="alert" className="rounded-md border border-red-800/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+          <div role="alert" className="rounded-md border border-red-800/60 bg-red-950/90 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-center pt-1">
           <Button onClick={submit} loading={busy} className="w-full sm:w-auto">
             <Swords className="h-4 w-4" aria-hidden />
             Begin the Trial

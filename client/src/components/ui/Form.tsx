@@ -11,7 +11,7 @@ interface FieldShellProps {
   required?: boolean;
 }
 
-export function FieldShell({ label, htmlFor, hint, error, children, required }: FieldShellProps) {
+function FieldShell({ label, htmlFor, hint, error, children, required }: FieldShellProps) {
   return (
     <div className="space-y-1.5">
       <label htmlFor={htmlFor} className="block text-sm font-heading text-parchment-dim">

@@ -1,7 +1,6 @@
 import { api } from './api';
 import type {
   AnswerResponse,
-  CreateTrialResponse,
   ModeKey,
   NextQuestionResponse,
   Paged,
@@ -12,9 +11,12 @@ import type {
   VerdictResponse,
 } from '@/types/api';
 
+// One /next call per trial at a time: the Clarify page starts it early (while the person reads their summary)
+// and the Trial page then simply waits for the same request instead of starting a second one.
+const nextInFlight = new Map<string, Promise<NextQuestionResponse>>();
+
 export const trialsService = {
-  create: (idea: string, mode: ModeKey) =>
-    api.post<CreateTrialResponse>('/trials', { idea, mode }),
+  create: (idea: string, mode: ModeKey) => api.post<Session>('/trials', { idea, mode }),
 
   list: (params: { kind?: SessionKind; saved?: boolean; page?: number; pageSize?: number } = {}) =>
     api.get<Paged<SessionListItem>>('/trials', {
@@ -28,19 +30,19 @@ export const trialsService = {
 
   get: (id: string) => api.get<Session>(`/trials/${id}`),
 
-  patchUnderstanding: (
-    id: string,
-    patch: { problem?: string; targetUsers?: string; proposedSolution?: string; title?: string },
-  ) =>
-    api.patch<{ id: string; title: string; understanding: Record<string, string> }>(
-      `/trials/${id}/understanding`,
-      patch,
-    ),
+  patchUnderstanding: (id: string, patch: { problem?: string; targetUsers?: string; proposedSolution?: string; title?: string }) =>
+    api.patch<Session>(`/trials/${id}/understanding`, patch),
 
   resolveExtension: (id: string, action: 'continue' | 'verdict') =>
     api.post<ResolveExtensionResponse>(`/trials/${id}/extend`, { action }),
 
-  next: (id: string) => api.post<NextQuestionResponse>(`/trials/${id}/next`),
+  next: (id: string): Promise<NextQuestionResponse> => {
+    const running = nextInFlight.get(id);
+    if (running) return running;
+    const p = api.post<NextQuestionResponse>(`/trials/${id}/next`).finally(() => nextInFlight.delete(id));
+    nextInFlight.set(id, p);
+    return p;
+  },
 
   answer: (id: string, questionId: string, answer?: string, skipped?: boolean) =>
     api.post<AnswerResponse>(`/trials/${id}/answer`, { questionId, answer, skipped }),
@@ -52,3 +54,4 @@ export const trialsService = {
 
   remove: (id: string) => api.delete<{ ok: boolean }>(`/trials/${id}`),
 };
+

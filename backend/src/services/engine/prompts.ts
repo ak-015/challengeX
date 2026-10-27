@@ -4,21 +4,21 @@ import type { Competitor, QaEntry, Understanding } from './types';
 
 const CATEGORY_LIST = CATEGORIES.map((c) => `${c} (${CATEGORY_HINTS[c]})`).join('; ');
 
-export function transcript(qa: QaEntry[]): string {
+function transcript(qa: QaEntry[]): string {
   if (qa.length === 0) return '(no questions asked yet)';
   return qa
     .map((q) => `Q${q.index} [${q.category}]: ${q.text}\nA${q.index}: ${q.skipped ? '(skipped by the user)' : (q.answer ?? '(not answered yet)')}`)
     .join('\n\n');
 }
 
-export function understandingBlock(u: Partial<Understanding>): string {
+function understandingBlock(u: Partial<Understanding>): string {
   return wrapUserData(
     'idea_understanding',
     `Problem: ${u.problem ?? ''}\nTarget users: ${u.targetUsers ?? ''}\nProposed solution: ${u.proposedSolution ?? ''}`,
   );
 }
 
-export function competitorsBlock(c: Competitor[] | null): string {
+function competitorsBlock(c: Competitor[] | null): string {
   if (!c || c.length === 0) return wrapUserData('competitors', '(none identified)');
   return wrapUserData('competitors', c.map((x) => `- ${x.name}: ${x.whatTheyDo.slice(0, 120)} | matters: ${x.whyItMatters.slice(0, 120)}`).join('\n'));
 }
@@ -41,7 +41,7 @@ JSON shape: {"competitors": [{"name": string, "url": null, "whatTheyDo": string,
 // ---------- next question ----------
 export function questionPlanSystem(mode: ModeKey): string {
   return `You plan a skeptical startup interrogation (mode: ${MODES[mode].label}: ${MODES[mode].directive}).
-After considering the idea and competitor research, choose the exact total number of questions needed, from ${MIN_QUESTIONS} to ${MAX_QUESTIONS} inclusive. The server ensures all seven categories are covered and enforces this total. Do not score the idea or choose a verdict.
+After considering the idea, choose the exact total number of questions needed, from ${MIN_QUESTIONS} to ${MAX_QUESTIONS} inclusive. The server ensures all seven categories are covered and enforces this total. Do not score the idea or choose a verdict.
 JSON shape: {"plannedTotal": integer}`;
 }
 
@@ -143,10 +143,10 @@ Be specific and realistic for the stated team size, hours and budget. Include an
 export function roadmapSystem(undecided: string[]): string {
   return `You design a build roadmap as a FREE-FORM DIRECTED GRAPH (not a straight list) for a validated idea.
 Stages (all six must appear): validate, spec, design, blueprint, prototype, launch.
-JSON shape: {"nodes": [{"id","stage","type":"step"|"decision"|"milestone","title" (max 60),"description" (max 240),"durationEstimate","deliverables" (max 4 strings),"difficulty":"low"|"medium"|"high","difficultyNote"?,"betterPath"?,"decisionField"?}], "edges": [{"from","to","kind":"recommended"|"alternate"|"normal","label"?}]}
+JSON shape: {"nodes": [{"id","stage","type":"step"|"decision"|"milestone","title" (max 50),"description" (max 140),"durationEstimate" (e.g. "3 days"),"deliverables" (max 2 short strings),"difficulty":"low"|"medium"|"high","difficultyNote"?,"betterPath"?,"decisionField"?}], "edges": [{"from","to","kind":"recommended"|"alternate"|"normal","label"?}]}
 Hard rules:
 - 12 to 26 nodes with unique short ids (n1, n2, ...). No coordinates.
-- Prefer 12 to 16 nodes unless the idea genuinely needs more. Keep descriptions concise and use at most 2 deliverables per node.
+- Use 12 to 15 nodes unless the idea genuinely needs more. Be terse: one sentence per description, at most 2 deliverables per node. Output compact JSON with no extra whitespace.
 - Acyclic. Exactly ONE start node (no incoming edges) and at least one end node (no outgoing edges). Every node reachable from the start.
 - Every "decision" node has EXACTLY ONE outgoing "recommended" edge and at least one outgoing "alternate" edge.
 - Undecided fields: ${undecided.length ? undecided.join(', ') : '(none)'}. For EACH undecided field add a decision node whose "decisionField" is that field, with a recommended and an alternate option.

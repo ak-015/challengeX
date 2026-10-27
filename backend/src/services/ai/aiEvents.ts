@@ -1,7 +1,7 @@
 import { getDb } from '../../lib/db';
 import { log } from '../../lib/logger';
 
-export interface AiEvent {
+interface AiEvent {
   route: string;
   model: string;
   ok: boolean;

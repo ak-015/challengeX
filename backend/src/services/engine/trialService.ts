@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { db, getDb } from '../../lib/db';
 import { toSessionRow } from '../../lib/rows';
-import { AppError, conflict, notFound } from '../../lib/errors';
+import { conflict, notFound } from '../../lib/errors';
 import { wrapUserData } from '../../lib/prompt-safety';
 import { generateJson } from '../ai/generateJson';
 import { getFastPool, getVerdictPool } from '../ai/pools';
@@ -44,11 +44,19 @@ export async function createTrial(userId: string, input: { idea: string; mode: M
     searchQueries: u.searchQueries,
   };
   const created = await db(
-    getDb().session.create({ data: { userId, kind: 'trial', title: u.title, mode: input.mode, ideaText: input.idea, understanding: understanding as never } }),
+    getDb().session.create({
+      data: {
+        userId,
+        kind: 'trial',
+        title: u.title,
+        mode: input.mode,
+        ideaText: input.idea,
+        understanding: understanding as never,
+      },
+    }),
     'trial insert',
   );
-  const row = toSessionRow(created);
-  return { id: row.id, title: row.title, mode: row.mode, understanding: { problem: u.problem, targetUsers: u.targetUsers, proposedSolution: u.proposedSolution } };
+  return sessionToDto(toSessionRow(created));
 }
 
 export async function patchUnderstanding(
@@ -67,7 +75,7 @@ export async function patchUnderstanding(
       ...(patch.proposedSolution !== undefined ? { proposedSolution: patch.proposedSolution } : {}),
     };
     const updated = await updateSession(s.id, s.version, { understanding, ...(patch.title !== undefined ? { title: patch.title } : {}) });
-    if (updated) return { id: updated.id, title: updated.title, understanding: { problem: understanding.problem, targetUsers: understanding.targetUsers, proposedSolution: understanding.proposedSolution } };
+    if (updated) return sessionToDto(updated);
   }
   throw conflict('CONFLICT', 'Please retry');
 }
@@ -82,23 +90,19 @@ function resolveUrl(url: string | null | undefined, results: SearchResult[]): st
   return results.find((r) => hostOf(r.url) === host)?.url ?? null;
 }
 
-export async function researchCompetitors(s: SessionRow): Promise<Competitor[]> {
+async function researchCompetitors(s: SessionRow): Promise<Competitor[]> {
   const u = (s.understanding ?? {}) as Understanding;
   const queries = (u.searchQueries && u.searchQueries.length > 0 ? u.searchQueries : [`${s.title} alternatives`]).slice(0, 3);
 
+  // All queries run at once; one failed query must not stop the rest.
+  const batches = await Promise.all(queries.map((q) => getSearch().search(q, { max: 3 }).catch(() => [] as SearchResult[])));
   const results: SearchResult[] = [];
   const seen = new Set<string>();
-  for (const q of queries) {
-    try {
-      for (const r of await getSearch().search(q, { max: 3 })) {
-        const h = hostOf(r.url);
-        if (seen.has(h)) continue;
-        seen.add(h);
-        results.push(r);
-      }
-    } catch {
-      /* one failed query must not stop the rest */
-    }
+  for (const r of batches.flat()) {
+    const h = hostOf(r.url);
+    if (seen.has(h)) continue;
+    seen.add(h);
+    results.push(r);
   }
 
   const fromSearch = results.length > 0;
@@ -154,31 +158,31 @@ const extensionResponse = (s: SessionRow) => ({
   assumptions: s.assumptions,
 });
 
-async function ensurePlannedTotal(userId: string, id: string, s: SessionRow): Promise<SessionRow> {
-  if (s.planned_total !== null) return s;
-  let plannedTotal: number;
-  if (s.qa.length > 0) {
-    plannedTotal = Math.min(MAX_QUESTIONS, Math.max(MIN_QUESTIONS, s.qa.length));
-  } else {
-    const mode = (s.mode ?? 'stress_test') as ModeKey;
-    const plan = await generateJson(questionPlanSchema, {
-      system: questionPlanSystem(mode),
-      user: [
-        `Idea:\n${wrapUserData('idea', s.idea_text ?? '')}`,
-        `Competitor research:\n${wrapUserData('competitors', JSON.stringify(s.competitors ?? []))}`,
-        `Understanding:\n${wrapUserData('understanding', JSON.stringify(s.understanding ?? {}))}`,
-      ].join('\n\n'),
-      pool: getFastPool(),
-      route: 'trial.plan',
-      maxTokens: 120,
-      temperature: 0.2,
-    });
-    plannedTotal = plan.plannedTotal;
-  }
-  const updated = await updateSession(s.id, s.version, { planned_total: plannedTotal });
+async function planTotal(s: SessionRow): Promise<number> {
+  if (s.qa.length > 0) return Math.min(MAX_QUESTIONS, Math.max(MIN_QUESTIONS, s.qa.length));
+  const mode = (s.mode ?? 'stress_test') as ModeKey;
+  const plan = await generateJson(questionPlanSchema, {
+    system: questionPlanSystem(mode),
+    user: [`Idea:\n${wrapUserData('idea', s.idea_text ?? '')}`, `Understanding:\n${wrapUserData('understanding', JSON.stringify(s.understanding ?? {}))}`].join('\n\n'),
+    pool: getFastPool(),
+    route: 'trial.plan',
+    maxTokens: 120,
+    temperature: 0.2,
+  });
+  return plan.plannedTotal;
+}
+
+/** Competitor research and the question plan do not depend on each other, so they run at the same time. */
+async function prepareTrial(userId: string, id: string, s: SessionRow): Promise<SessionRow> {
+  if (s.competitors !== null && s.planned_total !== null) return s;
+  const [competitors, plannedTotal] = await Promise.all([
+    s.competitors === null ? researchCompetitors(s) : Promise.resolve(s.competitors),
+    s.planned_total === null ? planTotal(s) : Promise.resolve(s.planned_total),
+  ]);
+  const updated = await updateSession(s.id, s.version, { competitors, planned_total: plannedTotal });
   if (updated) return updated;
   const fresh = await loadOwnedSession(userId, id, 'trial');
-  if (fresh.planned_total !== null) return fresh;
+  if (fresh.competitors !== null && fresh.planned_total !== null) return fresh;
   throw conflict('CONFLICT', 'Another request changed this trial. Please retry.');
 }
 
@@ -188,14 +192,7 @@ export async function nextQuestion(userId: string, id: string) {
   if (s.extension?.status === 'offered') return extensionResponse(s);
   if (s.interrogation_done) return doneResponse(s);
 
-  if (s.competitors === null) {
-    const competitors = await researchCompetitors(s);
-    const saved = await updateSession(s.id, s.version, { competitors });
-    s = saved ?? (await loadOwnedSession(userId, id, 'trial'));
-    if (s.competitors === null) throw conflict('CONFLICT', 'Please retry');
-  }
-
-  s = await ensurePlannedTotal(userId, id, s);
+  s = await prepareTrial(userId, id, s);
   const pending = pendingQuestion(s.qa);
   if (pending) return questionResponse(s, pending);
 
@@ -348,7 +345,7 @@ export async function answerQuestion(userId: string, id: string, input: AnswerIn
 }
 
 // ---------------------------------------------------------------- verdict
-export function verdictResponse(s: SessionRow) {
+function verdictResponse(s: SessionRow) {
   return {
     sessionId: s.id,
     title: s.title,

@@ -8,14 +8,14 @@ type AnyZ = z.ZodTypeAny;
 const lc = <T extends AnyZ>(schema: T) => z.preprocess((v) => (typeof v === 'string' ? v.trim().toLowerCase() : v), schema);
 
 /** Non-empty string clipped to max chars (validation + normalisation, avoids needless retries). */
-export const clip = (max: number) =>
+const clip = (max: number) =>
   z
     .string()
     .trim()
     .min(1)
     .transform((s) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s));
 
-export const categorySchema = lc(z.enum(CATEGORIES));
+const categorySchema = lc(z.enum(CATEGORIES));
 const riskSchema = lc(z.enum(['high', 'medium', 'low']));
 const levelSchema = lc(z.enum(['low', 'medium', 'high']));
 
@@ -144,7 +144,6 @@ export function makeVerdictSchema(questionCount: number) {
       }
     });
 }
-export type VerdictAi = z.infer<ReturnType<typeof makeVerdictSchema>>;
 
 // ---------- ideas ----------
 export const ideasAiSchema = z

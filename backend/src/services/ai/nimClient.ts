@@ -3,7 +3,7 @@
 import { env, parseModelId, providerConfig, type AiProvider } from '../../config/env';
 import { log } from '../../lib/logger';
 
-export const NIM_TIMEOUT_MS = 25_000;
+const DEFAULT_TIMEOUT_MS = 25_000;
 
 export class NimError extends Error {
   constructor(
@@ -17,16 +17,18 @@ export class NimError extends Error {
   }
 }
 
-export interface ChatMessage {
+interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-export interface ChatRequest {
+interface ChatRequest {
   model: string;
   messages: ChatMessage[];
   maxTokens: number;
   temperature: number;
+  /** Hard limit for this one HTTP call. Long outputs (roadmaps) need far more than a short question. */
+  timeoutMs?: number;
 }
 
 function parseRetryAfter(h: string | null): number | undefined {
@@ -44,7 +46,7 @@ export async function nimChat(req: ChatRequest): Promise<string> {
   if (!apiKey) throw new NimError(`no API key configured for provider "${provider}"`, 'network');
   const base = baseUrl.replace(/\/+$/, '');
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), NIM_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), req.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   try {
     const body: Record<string, unknown> = {
       model,
@@ -54,6 +56,8 @@ export async function nimChat(req: ChatRequest): Promise<string> {
       stream: false,
     };
     if (e.NIM_USE_RESPONSE_FORMAT) body.response_format = { type: 'json_object' };
+    // Reasoning models (gpt-oss, ...) spend most of their time and max_tokens "thinking"; 'low' makes them several times faster.
+    if (e.NIM_REASONING_EFFORT) body.reasoning_effort = e.NIM_REASONING_EFFORT;
     const res = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },

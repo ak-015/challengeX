@@ -13,8 +13,6 @@ export class ApiError extends Error {
 export const isAbort = (e: unknown): boolean =>
   (e instanceof DOMException && e.name === 'AbortError') || (e instanceof ApiError && e.code === 'ABORTED');
 
-export const errorCode = (e: unknown): string => (e instanceof ApiError ? e.code : 'UNKNOWN');
-
 const THEMED: Record<string, string> = {
   AI_BUSY: 'The realm is crowded. Give it a moment, then try again.',
   AI_BAD_OUTPUT: 'The Challenger’s reply came out garbled. Try again.',
@@ -46,7 +44,3 @@ export function friendlyMessage(e: unknown): string {
   }
   return 'Something went wrong.';
 }
-
-/** Errors worth a "Retry" button (transient). */
-export const isRetryable = (e: unknown): boolean =>
-  e instanceof ApiError && ['AI_BUSY', 'AI_BAD_OUTPUT', 'AI_UNAVAILABLE', 'NETWORK', 'TIMEOUT', 'RATE_LIMITED', 'CONFLICT', 'DB_ERROR', 'INTERNAL'].includes(e.code);

@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/useToast';
 import { errorMessage, ApiError } from '@/services/api';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { AuthButton, AuthError, AuthField, AuthLegal, AuthTitle, SocialRow } from '@/components/auth/AuthParts';
-import { LegalPopup } from '@/components/ui/LegalPopup';
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email'),
@@ -24,7 +23,6 @@ export function LoginPage() {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
 
   // Every sign-in passes through the gate unless the user was deep-linked somewhere specific.
   const from = (location.state as { from?: string } | null)?.from ?? '/gate';
@@ -99,17 +97,8 @@ export function LoginPage() {
           </Link>
         </p>
 
-        <AuthLegal
-          onPrivacy={() => setShowLegal('privacy')}
-          onTerms={() => setShowLegal('terms')}
-        />
+        <AuthLegal />
       </div>
-
-      <LegalPopup
-        isOpen={showLegal === 'privacy' || showLegal === 'terms'}
-        onClose={() => setShowLegal(null)}
-        kind={showLegal ?? 'privacy'}
-      />
     </AuthGate>
   );
 }

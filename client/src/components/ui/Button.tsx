@@ -12,7 +12,7 @@ export function Button({ variant = 'primary', loading, children, className, disa
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2 font-heading uppercase tracking-widest text-sm rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3',
+        'ornate-button inline-flex items-center justify-center gap-2 font-heading uppercase tracking-widest text-sm rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3',
         variant === 'primary' &&
           'bg-crimson hover:bg-crimson-glow text-white border border-crimson-glow/40 shadow-crimson-sm hover:shadow-crimson-md',
         variant === 'ghost' &&

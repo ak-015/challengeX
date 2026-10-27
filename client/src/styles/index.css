@@ -39,8 +39,8 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4 {
-  font-family: 'Cinzel', serif;
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cinzel Decorative', serif;
 }
 
 ::-webkit-scrollbar {
@@ -106,6 +106,46 @@ h1, h2, h3, h4 {
   .gothic-panel {
     @apply bg-surface border border-[var(--border-subtle)] rounded-lg shadow-stone;
   }
+  .trial-forge-panel {
+    position: relative;
+    isolation: isolate;
+    color: var(--text-primary);
+  }
+  .trial-mode-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .trial-mode-option {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(255, 107, 89, 0.35);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    background: linear-gradient(180deg, #5a1715, #310d10);
+    box-shadow: inset 0 1px 0 rgba(255, 211, 165, 0.08), 0 2px 4px rgba(42, 14, 11, 0.35);
+    color: #e8c6a9;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 0.67rem;
+    line-height: 1;
+    transition: border-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
+  .trial-mode-option:hover,
+  .trial-mode-option.is-selected {
+    border-color: #ff6a55;
+    color: #fff0d9;
+    box-shadow: 0 0 11px rgba(229, 31, 37, 0.45), inset 0 0 8px rgba(229, 31, 37, 0.22);
+  }
+  .trial-mode-option.is-selected {
+    background: linear-gradient(180deg, #741b1b, #400e12);
+  }
+  .trial-mode-option:focus-within {
+    outline: 2px solid #941820;
+    outline-offset: 2px;
+  }
   .gothic-input {
     @apply w-full bg-[#0b0606] border border-[var(--border-subtle)] rounded-md px-4 py-3 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-visible)] focus:ring-1 focus:ring-[var(--border-visible)] transition-colors font-body;
   }
@@ -115,6 +155,127 @@ h1, h2, h3, h4 {
   .gothic-btn-ghost {
     @apply inline-flex items-center justify-center gap-2 bg-transparent hover:bg-crimson-soft text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-heading uppercase tracking-widest text-sm px-6 py-3 rounded-md border border-[var(--border-subtle)] hover:border-[var(--border-visible)] transition-all;
   }
+}
+
+/* Shared dark, ember-lit frame used by content panels throughout the app. */
+.gothic-panel,
+.trial-forge-panel {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(255, 38, 56, 0.68) !important;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(99, 10, 20, 0.12), transparent 65%),
+    linear-gradient(145deg, rgba(13, 8, 9, 0.98), rgba(5, 4, 5, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 38, 56, 0.08),
+    inset 0 0 28px rgba(55, 8, 14, 0.18),
+    0 0 16px rgba(229, 9, 32, 0.1) !important;
+}
+
+.gothic-panel::before,
+.trial-forge-panel::before {
+  position: absolute;
+  z-index: 2;
+  inset: 4px;
+  border: 1px solid rgba(255, 38, 56, 0.2);
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, #ff4652 0 1px, transparent 1px 5px, #d21c2b 5px 6px, transparent 6px) top left / 14px 14px no-repeat,
+    linear-gradient(225deg, #ff4652 0 1px, transparent 1px 5px, #d21c2b 5px 6px, transparent 6px) top right / 14px 14px no-repeat,
+    linear-gradient(45deg, #ff4652 0 1px, transparent 1px 5px, #d21c2b 5px 6px, transparent 6px) bottom left / 14px 14px no-repeat,
+    linear-gradient(315deg, #ff4652 0 1px, transparent 1px 5px, #d21c2b 5px 6px, transparent 6px) bottom right / 14px 14px no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+.gothic-input,
+.auth-field {
+  border: 1px solid rgba(255, 38, 56, 0.48) !important;
+  border-radius: 3px !important;
+  background-color: #090809 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 38, 56, 0.07),
+    inset 0 4px 14px rgba(0, 0, 0, 0.72) !important;
+}
+
+.gothic-input:focus,
+.auth-field:focus-within {
+  border-color: #ff4652 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 38, 56, 0.12),
+    inset 0 4px 14px rgba(0, 0, 0, 0.72),
+    0 0 12px rgba(229, 9, 32, 0.23) !important;
+}
+
+.trial-idea-field > div > label {
+  color: var(--text-secondary);
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.trial-idea-field > div > p {
+  color: var(--text-muted);
+}
+
+.trial-answer-input {
+  min-height: 132px !important;
+  color: var(--text-primary) !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1.05rem !important;
+}
+
+.trial-answer-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.trial-answer-input:focus {
+  border-color: #ff4652 !important;
+}
+
+.gate-idle-content {
+  transform: translateX(max(2.8vw, 4.978vh));
+}
+
+.gothic-btn-primary,
+.gothic-btn-ghost,
+.auth-cta,
+.auth-social,
+.ornate-button {
+  position: relative;
+  border: 1px solid rgba(255, 69, 82, 0.72) !important;
+  border-radius: 3px !important;
+  background: linear-gradient(180deg, #310b10, #100709) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 69, 82, 0.13),
+    0 0 14px rgba(229, 9, 32, 0.25) !important;
+  color: #f0d7d0 !important;
+}
+
+.gothic-btn-primary::before,
+.gothic-btn-ghost::before,
+.auth-cta::before,
+.auth-social::before,
+.ornate-button::before {
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(255, 69, 82, 0.22);
+  background:
+    linear-gradient(135deg, #ff4652 0 1px, transparent 1px 4px, #d21c2b 4px 5px, transparent 5px) top left / 10px 10px no-repeat,
+    linear-gradient(225deg, #ff4652 0 1px, transparent 1px 4px, #d21c2b 4px 5px, transparent 5px) top right / 10px 10px no-repeat,
+    linear-gradient(45deg, #ff4652 0 1px, transparent 1px 4px, #d21c2b 4px 5px, transparent 5px) bottom left / 10px 10px no-repeat,
+    linear-gradient(315deg, #ff4652 0 1px, transparent 1px 4px, #d21c2b 4px 5px, transparent 5px) bottom right / 10px 10px no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+.gothic-btn-primary:hover:not(:disabled),
+.gothic-btn-ghost:hover,
+.auth-cta:hover:not(:disabled),
+.auth-social:hover,
+.ornate-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #4a1016, #1a080b) !important;
+  box-shadow: 0 0 20px rgba(229, 9, 32, 0.45) !important;
 }
 
 /* Focus visibility for keyboard users */

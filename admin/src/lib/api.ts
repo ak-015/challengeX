@@ -2,7 +2,7 @@ import { API_BASE_URL } from '@/env';
 import { useAuth, getToken } from '@/store/authStore';
 import { ApiError } from './errors';
 
-export interface RequestOptions {
+interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Send the Bearer token (default true). Public/auth endpoints pass false. */
@@ -17,12 +17,11 @@ export interface RequestOptions {
   retry?: boolean;
 }
 
-export const TIMEOUT_DEFAULT = 30_000;
-export const TIMEOUT_AI = 75_000; // server budget is 45 s per AI call, up to 2 sequential calls
+const TIMEOUT_DEFAULT = 30_000;
 
 type UnauthorizedHandler = (reason: 'expired' | 'suspended') => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
-export const setUnauthorizedHandler = (h: UnauthorizedHandler | null) => {
+const setUnauthorizedHandler = (h: UnauthorizedHandler | null) => {
   onUnauthorized = h;
 };
 

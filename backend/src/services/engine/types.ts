@@ -1,6 +1,6 @@
 import type { Category } from './constants';
 
-export type Risk = 'high' | 'medium' | 'low';
+type Risk = 'high' | 'medium' | 'low';
 
 export interface Assessment {
   category: Category;

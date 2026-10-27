@@ -19,7 +19,10 @@ trialsRouter.post(
   aiLimiter,
   asyncHandler(async (req, res) => {
     const body = z
-      .object({ idea: z.string().trim().min(20).max(2000), mode: z.enum(MODE_KEYS).default(DEFAULT_MODE) })
+      .object({
+        idea: z.string().trim().min(20).max(2000),
+        mode: z.enum(MODE_KEYS).default(DEFAULT_MODE),
+      })
       .parse(req.body);
     res.status(201).json(await createTrial(currentUser(req).id, body));
   }),

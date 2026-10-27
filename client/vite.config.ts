@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -53,6 +55,26 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err: Error) => {
+            console.error('API proxy error:', err.message);
+          });
+        },
+      },
+      // OAuth callbacks: protocol-relative so the backend's redirect URL matches
+      '/api/auth/oauth/google/callback': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/api/auth/oauth/apple/callback': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port: 5173,

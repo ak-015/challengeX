@@ -5,22 +5,22 @@ import { AppError, tooMany } from '../lib/errors';
 import { sendEmail } from './email';
 import { otpEmail } from './email/template';
 
-export type OtpPurpose = 'signup' | 'reset';
-export const OTP_TTL_MS = 10 * 60_000;
-export const OTP_MAX_ATTEMPTS = 5;
-export const OTP_COOLDOWN_MS = 60_000;
-export const OTP_MAX_PER_HOUR = 5;
+type OtpPurpose = 'signup' | 'reset';
+const OTP_TTL_MS = 10 * 60_000;
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_COOLDOWN_MS = 60_000;
+const OTP_MAX_PER_HOUR = 5;
 
-export interface OtpRecord {
+interface OtpRecord {
   code_hash: string;
   expires_at: Date | string;
   attempts: number;
   consumed_at: Date | string | null;
 }
-export type OtpResult = 'ok' | 'expired' | 'locked' | 'wrong' | 'consumed';
+type OtpResult = 'ok' | 'expired' | 'locked' | 'wrong' | 'consumed';
 
-/** Pure OTP check (no I/O) so it can be unit-tested. Single-use, expiry, attempt cap, constant-time compare. */
-export function evaluateOtp(
+/** Pure OTP check (no I/O). Single-use, expiry, attempt cap, constant-time compare. */
+function evaluateOtp(
   rec: OtpRecord,
   email: string,
   purpose: OtpPurpose,

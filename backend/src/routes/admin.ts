@@ -48,14 +48,14 @@ async function loadTarget(id: string): Promise<TargetRow> {
   return { id: row.id, email: row.email, role: row.role as TargetRow['role'], status: row.status as TargetRow['status'], email_verified: row.emailVerified, avatar_public_id: row.avatarPublicId };
 }
 
-/** Replaces the old `admin_stats_json()` SQL function with Prisma aggregations. Same JSON shape. */
+/** Dashboard numbers, computed with Prisma aggregations. */
 async function adminStats() {
   const prisma = getDb();
   const day = 86_400_000;
   const start = new Date(Date.now() - 29 * day);
   start.setHours(0, 0, 0, 0);
 
-  const [users, verifiedUsers, trials, completedTrials, roadmaps, shares, verdictRows, avgRow, signupRows, trialRows, ai24, aiByModel, skipRows] =
+  const [users, verifiedUsers, trials, completedTrials, roadmaps, shares, verdictRows, avgRow, signupRows, trialRows, ai24, aiByModel, skipTotals] =
     await Promise.all([
       db(prisma.user.count(), 'stats users'),
       db(prisma.user.count({ where: { emailVerified: true } }), 'stats verified'),
@@ -69,7 +69,13 @@ async function adminStats() {
       db(prisma.session.findMany({ where: { kind: 'trial', createdAt: { gte: start } }, select: { createdAt: true } }), 'stats trials/day'),
       db(prisma.aiEvent.findMany({ where: { createdAt: { gt: new Date(Date.now() - day) } }, select: { ok: true, model: true, latencyMs: true } }), 'stats ai'),
       db(prisma.aiEvent.groupBy({ by: ['model'], where: { createdAt: { gt: new Date(Date.now() - day) } }, _count: { model: true } }), 'stats ai models'),
-      db(prisma.session.findMany({ where: { kind: 'trial' }, select: { skippedCount: true, qa: true } }), 'stats skip'),
+      db(
+        prisma.$queryRaw<{ skipped: number; questions: number }[]>`
+          SELECT COALESCE(SUM(skipped_count), 0)::int AS skipped,
+                 COALESCE(SUM(CASE WHEN jsonb_typeof(qa) = 'array' THEN jsonb_array_length(qa) ELSE 0 END), 0)::int AS questions
+          FROM sessions WHERE kind = 'trial'`,
+        'stats skip',
+      ),
     ]);
 
   const key = (d: Date) => d.toISOString().slice(0, 10);
@@ -103,12 +109,8 @@ async function adminStats() {
     byModel.set(e.model, m);
   }
 
-  let skipped = 0;
-  let questions = 0;
-  for (const s of skipRows) {
-    skipped += s.skippedCount;
-    questions += Array.isArray(s.qa) ? s.qa.length : 0;
-  }
+  const skipped = skipTotals[0]?.skipped ?? 0;
+  const questions = skipTotals[0]?.questions ?? 0;
 
   const aiOk = ai24.filter((e) => e.ok).length;
   return {

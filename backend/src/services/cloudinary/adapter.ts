@@ -11,14 +11,14 @@ function sdk() {
   return cloudinary;
 }
 
-export interface CropRegion {
+interface CropRegion {
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-export interface SignedUpload {
+interface SignedUpload {
   uploadUrl: string;
   apiKey: string;
   cloudName: string;
@@ -56,7 +56,7 @@ export function avatarTransformation(crop?: CropRegion): string {
   return 'c_fill,g_face,h_256,w_256';
 }
 
-export interface CloudResource {
+interface CloudResource {
   publicId: string;
   secureUrl: string;
   format: string;

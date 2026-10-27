@@ -13,5 +13,3 @@ export const assets = {
   /** Secondary gothic realm scene — application backgrounds and supporting sections */
   realmSecondary: '/assets/realm-secondary.webp',
 } as const;
-
-export type AssetKey = keyof typeof assets;

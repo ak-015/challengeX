@@ -2,8 +2,7 @@
 // Sources: src/routes/*.ts, src/services/engine/{types,sessions,schemas,constants,graphValidator}.ts
 
 // ---------------------------------------------------------------- auth
-export type UserRole = 'user' | 'admin';
-export type UserStatus = 'active' | 'suspended';
+type UserRole = 'user' | 'admin';
 
 export interface User {
   id: string;
@@ -56,16 +55,16 @@ export const MODES: Record<ModeKey, { label: string; directive: string }> = {
   failure: { label: 'Failure', directive: 'Post-mortem mode: it failed 12 months from now. Ask why.' },
 };
 
-export type Risk = 'high' | 'medium' | 'low';
-export type Difficulty = 'low' | 'medium' | 'high';
+type Risk = 'high' | 'medium' | 'low';
+type Difficulty = 'low' | 'medium' | 'high';
 
-export interface Assessment {
+interface Assessment {
   category: RiskCategory;
   risk: Risk;
   assumption: string;
 }
 
-export interface QaEntry {
+interface QaEntry {
   id: string;
   index: number;
   category: RiskCategory;
@@ -169,20 +168,20 @@ export interface CreateTrialResponse {
   understanding: Omit<Understanding, 'searchQueries'>;
 }
 
-export interface QuestionPayload {
+interface QuestionPayload {
   question: { id: string; index: number; category: RiskCategory; text: string };
   progress: Progress;
   competitors?: Competitor[];
   assumptions: Assumption[];
 }
 
-export interface DonePayload {
+interface DonePayload {
   done: true;
   progress: Progress;
   assumptions: Assumption[];
 }
 
-export interface ExtensionPayload {
+interface ExtensionPayload {
   extension: TrialExtension;
   progress: Progress;
   assumptions: Assumption[];
@@ -217,14 +216,14 @@ export interface ResolveExtensionResponse {
 }
 
 // verdict payload (server-built in generateVerdict)
-export interface CategoryScoreDetail {
+interface CategoryScoreDetail {
   score: number;
   penalty: number;
   finalScore: number;
   rationale: string;
 }
 
-export interface Struggle {
+interface Struggle {
   title: string;
   category: RiskCategory;
   why: string;
@@ -240,13 +239,13 @@ export interface Fix {
   effort: Difficulty;
 }
 
-export interface Alternative {
+interface Alternative {
   title: string;
   pitch: string;
   whatChanges: string;
 }
 
-export interface ValidationExperiment {
+interface ValidationExperiment {
   description: string;
   metric: string;
   sampleSize: string;
@@ -256,7 +255,7 @@ export interface ValidationExperiment {
   killIf: string;
 }
 
-export interface VerdictPayload {
+interface VerdictPayload {
   categoryScores: Record<RiskCategory, CategoryScoreDetail>;
   struggles: Struggle[];
   fixes: Fix[];
@@ -279,7 +278,7 @@ export interface GeneratedIdea {
   mainRisk: string;
 }
 
-export interface IdeasPayload {
+interface IdeasPayload {
   ideas: GeneratedIdea[];
 }
 
@@ -310,7 +309,7 @@ export interface GenerateIdeasResponse {
 export type Stage = 'validate' | 'spec' | 'design' | 'blueprint' | 'prototype' | 'launch';
 export const STAGES: Stage[] = ['validate', 'spec', 'design', 'blueprint', 'prototype', 'launch'];
 
-export type DecisionField = 'techStack' | 'marketing' | 'team' | 'timeline' | 'budget' | 'platform';
+type DecisionField = 'techStack' | 'marketing' | 'team' | 'timeline' | 'budget' | 'platform';
 
 export interface GraphNode {
   id: string;
@@ -379,7 +378,7 @@ export interface RoadmapSource {
 }
 
 // ---------------------------------------------------------------- shares
-export interface ShareSnapshot {
+interface ShareSnapshot {
   [key: string]: unknown;
 }
 
@@ -396,12 +395,12 @@ export interface PublicShare {
 // ---------------------------------------------------------------- uploads
 export interface SignedUpload {
   uploadUrl: string;
-  api_key: string;
+  apiKey: string;
+  cloudName: string;
   timestamp: number;
   signature: string;
   params: Record<string, string>;
-  publicId: string;
-  [key: string]: unknown;
+  maxBytes: number;
 }
 
 // POST /api/trials/:id/verdict — verdictResponse

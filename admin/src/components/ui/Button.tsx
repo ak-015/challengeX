@@ -1,5 +1,4 @@
-import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes } from 'react';
-import { Link, type LinkProps } from 'react-router-dom';
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 import { Spinner } from './Spinner';
 
@@ -36,15 +35,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   );
 });
-
-interface ButtonLinkProps extends LinkProps {
-  variant?: Variant;
-  size?: Size;
-}
-export function ButtonLink({ variant = 'primary', size = 'md', className, ...rest }: ButtonLinkProps) {
-  return <Link className={cls(variant, size, className)} {...rest} />;
-}
-
-export function ButtonAnchor({ variant = 'ghost', size = 'md', className, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: Variant; size?: Size }) {
-  return <a className={cls(variant, size, className)} {...rest} />;
-}

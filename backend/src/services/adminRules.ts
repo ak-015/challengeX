@@ -2,7 +2,7 @@ import { AppError } from '../lib/errors';
 
 export type AdminAction = 'suspend' | 'reactivate' | 'demote' | 'promote' | 'delete';
 
-export interface AdminChange {
+interface AdminChange {
   actorId: string;
   target: { id: string; email: string; role: 'user' | 'admin'; status: 'active' | 'suspended' };
   action: AdminAction;

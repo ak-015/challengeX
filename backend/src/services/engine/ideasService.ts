@@ -6,9 +6,8 @@ import { getFastPool } from '../ai/pools';
 import { getSearch } from '../search';
 import { ideasAiSchema } from './schemas';
 import { ideasSystem } from './prompts';
-import type { SessionRow } from './types';
 
-export interface IdeasInput {
+interface IdeasInput {
   hobbies: string[];
   interests: string[];
   skills: string[];
@@ -25,7 +24,7 @@ export interface IdeasInput {
   extra?: string;
 }
 
-export function describeInput(i: IdeasInput): string {
+function describeInput(i: IdeasInput): string {
   const line = (label: string, v: string | string[] | undefined) =>
     Array.isArray(v) ? (v.length ? `${label}: ${v.join(', ')}` : '') : v ? `${label}: ${v}` : '';
   return [

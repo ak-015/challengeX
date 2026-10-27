@@ -10,9 +10,9 @@ import { assets } from '@/utils/assets';
  */
 
 export type Vec2 = [number, number];
-export type Vec3 = [number, number, number];
+type Vec3 = [number, number, number];
 
-export interface FlameSpec {
+interface FlameSpec {
   /** centre x, y of the base (where the flame meets the brazier), width, height */
   x: number;
   y: number;
@@ -23,7 +23,7 @@ export interface FlameSpec {
   sharp?: boolean;
 }
 
-export interface SwordSpec {
+interface SwordSpec {
   /** hilt-end and tip of the blade's centre line */
   from: Vec2;
   to: Vec2;
@@ -34,7 +34,7 @@ export interface SwordSpec {
   gain: number;
 }
 
-export interface MoonSpec {
+interface MoonSpec {
   x: number;
   y: number;
   r: number;
@@ -45,7 +45,7 @@ export interface MoonSpec {
 }
 
 /** A region where painted fire/lava pixels are made to flow in a given direction. */
-export interface FlowSpec {
+interface FlowSpec {
   rect: [number, number, number, number];
   /** drift in artwork px per second */
   dir: Vec2;
@@ -56,7 +56,19 @@ export interface FlowSpec {
   color: Vec3;
 }
 
-export interface FogLayer {
+interface WaterfallSpec {
+  /** x0, y0, x1, y1 of the fall (artwork px): lip at the top, foot at the bottom */
+  rect: [number, number, number, number];
+  /** how fast the water drops, px/s */
+  speed: number;
+  /** painted-water colour test: luminance lo/hi (0-1) and the saturation ceiling (0-1) */
+  pale: [number, number];
+  sat: number;
+  /** optional spray plume at the foot: centre x, base y, width, height */
+  spray?: [number, number, number, number];
+}
+
+interface FogLayer {
   y0: number;
   y1: number;
   soft: number;
@@ -69,7 +81,7 @@ export interface FogLayer {
   seed: number;
 }
 
-export interface EmberSpec {
+interface EmberSpec {
   x: number;
   y: number;
   spread: number;
@@ -79,7 +91,7 @@ export interface EmberSpec {
 }
 
 export interface SceneConfig {
-  id: 'background' | 'secondary' | 'ritual' | 'gate';
+  id: 'background' | 'secondary' | 'ritual' | 'gate' | 'gateOpen' | 'gateWater';
   image: string;
   size: Vec2;
   /** colour thresholds used to find fire/lava pixels (0-255 channel values) */
@@ -95,6 +107,8 @@ export interface SceneConfig {
   swords: SwordSpec[];
   flows: FlowSpec[];
   fog: FogLayer[];
+  /** waterfalls whose painted water is made to fall, with foam streaks and spray */
+  waterfalls?: WaterfallSpec[];
   /** animate the PAINTED fog in the artwork (drift + billow) instead of adding smoke on top */
   fogFlow?: { amp: number; speed: number };
   embers: EmberSpec[];
@@ -103,7 +117,7 @@ export interface SceneConfig {
 /* ──────────────────────────────────────────────────────────────────────────
    realm-background — hooded statue with the rune sword, braziers, blood moon
    ────────────────────────────────────────────────────────────────────────── */
-export const BACKGROUND_SCENE: SceneConfig = {
+const BACKGROUND_SCENE: SceneConfig = {
   id: 'background',
   image: assets.realmBackground,
   size: [1672, 941],
@@ -134,6 +148,12 @@ export const BACKGROUND_SCENE: SceneConfig = {
     { rect: [0, 700, 360, 941], dir: [6, -8], scale: 40, gain: 0.9, contrast: 1.5, color: [1, 0.35, 0.08] },
     { rect: [1330, 700, 1672, 941], dir: [-6, -8], scale: 40, gain: 0.9, contrast: 1.5, color: [1, 0.35, 0.08] },
   ],
+  // the three falls beside the viaduct (dim in the painting, so the colour test is generous)
+  waterfalls: [
+    { rect: [1098, 355, 1134, 440], speed: 70, pale: [0.10, 0.26], sat: 0.55 },
+    { rect: [1242, 402, 1290, 482], speed: 80, pale: [0.10, 0.26], sat: 0.55 },
+    { rect: [1388, 470, 1420, 530], speed: 70, pale: [0.10, 0.26], sat: 0.55 },
+  ],
   fog: [
     // mist rolling in across the wet floor
     { y0: 560, y1: 800, soft: 90, speed: 16, scale: 320, density: 0.8, tint: [0.96, 0.84, 0.84], seed: 1.3 },
@@ -157,7 +177,7 @@ export const BACKGROUND_SCENE: SceneConfig = {
 /* ──────────────────────────────────────────────────────────────────────────
    realm-secondary — the cloaked knight, burning castle, lava falls, blood moon
    ────────────────────────────────────────────────────────────────────────── */
-export const SECONDARY_SCENE: SceneConfig = {
+const SECONDARY_SCENE: SceneConfig = {
   id: 'secondary',
   image: assets.realmSecondary,
   size: [1672, 941],
@@ -206,7 +226,7 @@ export const SECONDARY_SCENE: SceneConfig = {
 /* ──────────────────────────────────────────────────────────────────────────
    ritual-chamber — gothic hall, eight wall torches, floor ritual circle
    ────────────────────────────────────────────────────────────────────────── */
-export const RITUAL_SCENE: SceneConfig = {
+const RITUAL_SCENE: SceneConfig = {
   id: 'ritual',
   image: assets.ritualChamber,
   size: [1672, 941],
@@ -248,7 +268,7 @@ export const RITUAL_SCENE: SceneConfig = {
    gate-closed — the realm gate: dragon, twin guards with glowing swords, braziers
    (login / register / forgot backdrop)
    ────────────────────────────────────────────────────────────────────────── */
-export const GATE_SCENE: SceneConfig = {
+const GATE_SCENE: SceneConfig = {
   id: 'gate',
   image: assets.gateClosed,
   size: [1672, 941],
@@ -270,6 +290,12 @@ export const GATE_SCENE: SceneConfig = {
     { from: [1256, 532], to: [1256, 738], w0: 14, w1: 2.2, color: [1, 0.14, 0.12], gain: 1 },
   ],
   flows: [],
+  waterfalls: [
+    { rect: [108, 545, 206, 656], speed: 125, pale: [0.42, 0.62], sat: 0.38, spray: [160, 648, 110, 60] },
+    { rect: [212, 372, 246, 440], speed: 95, pale: [0.42, 0.62], sat: 0.38, spray: [229, 434, 46, 28] },
+    { rect: [1590, 425, 1672, 566], speed: 125, pale: [0.42, 0.62], sat: 0.38, spray: [1635, 556, 100, 56] },
+    { rect: [1652, 288, 1672, 366], speed: 95, pale: [0.42, 0.62], sat: 0.38 },
+  ],
   fog: [], // the painting already carries its own mist — animated in place below
   fogFlow: { amp: 34, speed: 0.06 },
   embers: [
@@ -282,9 +308,51 @@ export const GATE_SCENE: SceneConfig = {
   ],
 };
 
+/* The gate transition (GateExperience) draws its own fire and sword glow, so these two plates
+   carry ONLY the waterfalls (and the lava river in the open gate). */
+const PLAIN = {
+  size: [1672, 941] as Vec2,
+  hot: { gb: [18, 78] as Vec2, r: [110, 210] as Vec2 },
+  sky: [70, 135] as Vec2,
+  heat: 0,
+  bloom: 0,
+  flicker: 0,
+  flames: [],
+  moon: null,
+  swords: [],
+  fog: [],
+  embers: [],
+};
+
+const GATE_WATER_SCENE: SceneConfig = {
+  ...PLAIN,
+  id: 'gateWater',
+  image: assets.gateClosed,
+  flows: [],
+  waterfalls: GATE_SCENE.waterfalls,
+};
+
+const GATE_OPEN_SCENE: SceneConfig = {
+  ...PLAIN,
+  id: 'gateOpen',
+  image: assets.gateOpen,
+  flicker: 1,
+  flows: [
+    // the lava river winding away from the open doorway
+    { rect: [800, 636, 935, 765], dir: [26, 38], scale: 40, gain: 1.0, contrast: 1.3, color: [1, 0.45, 0.12] },
+  ],
+  waterfalls: [
+    ...(GATE_SCENE.waterfalls ?? []),
+    { rect: [798, 578, 856, 652], speed: 105, pale: [0.38, 0.6], sat: 0.4, spray: [826, 646, 70, 40] },
+    { rect: [888, 568, 930, 616], speed: 85, pale: [0.38, 0.6], sat: 0.4 },
+  ],
+};
+
 export const SCENES: Record<SceneConfig['id'], SceneConfig> = {
   background: BACKGROUND_SCENE,
   secondary: SECONDARY_SCENE,
   ritual: RITUAL_SCENE,
   gate: GATE_SCENE,
+  gateOpen: GATE_OPEN_SCENE,
+  gateWater: GATE_WATER_SCENE,
 };

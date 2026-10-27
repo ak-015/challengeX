@@ -1,4 +1,4 @@
-export interface OtpEmailInput {
+interface OtpEmailInput {
   code: string;
   purpose: 'signup' | 'reset';
 }
