@@ -23,7 +23,7 @@ interface GenerateOptions {
 
 type Parsed<T> = { ok: true; data: T } | { ok: false; error: string };
 
-function parse<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, text: string): Parsed<T> {
+function parse<S extends z.ZodType>(schema: S, text: string): Parsed<z.output<S>> {
   let raw: unknown;
   try {
     raw = extractJsonObject(text);
@@ -60,7 +60,7 @@ function shouldRetryPoolError(err: unknown): boolean {
  * A whole pass is retried once for unavailable pools or a busy pool with a very short cooldown.
  * Longer pool cooldowns are returned to the caller with a retry hint instead of being hammered.
  */
-export async function generateJson<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, opts: GenerateOptions): Promise<T> {
+export async function generateJson<S extends z.ZodType>(schema: S, opts: GenerateOptions): Promise<z.output<S>> {
   try {
     return await generateOnce(schema, opts);
   } catch (err) {
@@ -70,7 +70,7 @@ export async function generateJson<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown
   }
 }
 
-async function generateOnce<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, opts: GenerateOptions): Promise<T> {
+async function generateOnce<S extends z.ZodType>(schema: S, opts: GenerateOptions): Promise<z.output<S>> {
   const system = `${opts.system}\n\nReturn ONLY one JSON object. No markdown, no code fences, no commentary before or after it.\n${SYSTEM_FOOTER}`;
   const maxTokens = opts.maxTokens ?? 1200;
   const temperature = opts.temperature ?? 0.4;
